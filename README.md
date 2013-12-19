@@ -1,49 +1,69 @@
-HTMLBitmapFonts
-===============
+Starling extension for using bitmap fonts with simplified html tags for styling texts
 
-Starling extension for using bitmap fonts with simplified html for styling texts
+___
+
+HTMLTextField
+=============
+
+<code>HTMLTextField</code> is a Starling TextField for using with <il>simplified html notation</il> (just for styling: no links, no images...).
 
 
-HTMLTextField is a Starling TextField for using with simplified html notation (just for styling: no links, no images...).
+ACCEPTED TAGS:
+--------------
 
-accepted tags:
-<ul>
-	<li>&lt;b&gt;&lt;/b&gt; -> bold</li>
-	<li>&lt;i&gt;&lt;/i&gt; -> italic</li>
-	<li>&lt;size="10"&gt;&lt;/size&gt; or &lt;s="10"&gt;&lt;/s&gt; -> font size (10 in this exemple)</li>
-	<li>&lt;color="0xFF0000"&gt;&lt;/color&gt; or &lt;c="0xFF0000"&gt;&lt;/c&gt; -> solid color (red in this exemple) <b>don't forget 0x or # !</b></li>
-	<li>&lt;color="0xFF0000,0xFFFFFF"&gt;&lt;/color&gt; or &lt;c="0xFF00000xFFFFFF"&gt;&lt;/c&gt; -> up/down gradient (red / white in this exemple) <b>don't forget 0x or # !</b></li>
-	<li>&lt;color="0xFF0000,0xFFFFFF,0x000000,0x0000FF"&gt;&lt;/color&gt; or &lt;c="0xFF0000,0xFFFFFF,0x000000,0x0000FF"&gt;&lt;/c&gt; -> custom gradient
-(up left = red / up right = white / bottom left = black / bottom right = blue in this exemple) <b>don't forget 0x or # !</b></li>
-</ul>
 
-HTMLTextField uses HTMLBitmapFonts instead of the tradtional BitmapFont
+* **bold** : `<b></b>`;
+* **italic** : `<i></i>`;
+* **size**   : `<size="10"></size>` or `<s="10"></s>`;
+* **colors** : _don't forget '0x' or '#' !_
+ * **solid** : <br/>
+ `<color="0xFF0000"></color>` or <br/>
+ `<c="0xFF0000"></c>`;
+ * **gradient up / down** : <br/>
+ `<color="0xFF0000,0xFFFFFF"></color>` or <br/>
+ `<c="0xFF00000xFFFFFF"></c>;`
+ * **gradient up-left/up-right/down-left/down-right** : <br/>
+ `<color="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></color>` or <br/>
+ `<c="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></c>`
 
-to add a font for use with HTMLtextField you must add them to HTMLTextField with the static methods <code>HTMLTextField.registerBitmapFont</code>
-this fonction accept as xml value the same XMLs as traditional BitmapFont.
+
+<i>HTMLTextField uses HTMLBitmapFonts instead of the tradtional BitmapFont.</i>
+
+___
+
+To add a font for use with HTMLtextField you must add them to HTMLTextField with the static method <code>HTMLTextField.registerBitmapFont</code> this fonction accept as xml value the same XML as traditional BitmapFont.
 
 They can be generated with tools like :
 <ul>
 	<li><a href="http://kvazars.com/littera/">Littera</a></li>
-	<li><a href="http://www.angelcode.com/products/bmfont/">AngelCode - Bitmap Font Generator</a></li>
+	<li><a href="http://www.angelcode.com/products/bmfont/">Bitmap Font Generator</a></li>
 	<li><a href="http://glyphdesigner.71squared.com/">Glyph Designer</a></li>
 </ul>
 
 Personnaly i use AssetManager for loading fonts and i just modified it like this: <br/>
 in loadQueue -> processXML :</br>
 
-else if( rootNode == "font" )
-{
-	name 	= xml.info.&#64;face.toString();
-	fileName 	= getName(xml.pages.page.&#64;file.toString());
-	isBold 	= xml.info.&#64;bold == 1;
-	isItalic 	= xml.info.&#64;italic == 1;
+	// if I parse fontHTML -> load the font for HTMLTextFields
+	else if( rootNode == "fontHTML" )
+	{
+		name 		= xml.info.@face.toString();
+		fileName 	= getName(xml.pages.page.@file.toString());
+		isBold 		= xml.info.@bold == 1;
+		isItalic 	= xml.info.@italic == 1;
+		
+		log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
+		
+		fontTexture = getTexture( fileName );
+		HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.@size, isBold, isItalic, name.toLowerCase() );
+		removeTexture( fileName, false );
+		
+		mLoadedHTMLFonts.push( name.toLowerCase() );
+	}
+
+___
 	
-	log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
-	
-	fontTexture = getTexture( fileName );
-	HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.&#64;size, isBold, isItalic, name.toLowerCase() );
-	removeTexture( fileName, false );
-	
-	mLoadedHTMLFonts.push( name.toLowerCase() );
-}
+* <em>Only **one font name** can be used in the HTMLTextField, it can only change size, bold, italic, and color</em>
+* <em>All font styles must be on the **same atlas** as the textField is drawed on a QuadBatch</em>
+* <em>No scales are applied on the texts, when adapting the font size it just search within the available sizes</em>
+* <em>HTMLBitmapFont has a static property globalScale (default 1), you can set it to the scale applied on the starling viewport. It will search the best font size to adapt the desired font size without scaling them.</em>
+
