@@ -10,7 +10,7 @@ package starling.extensions.HTMLBitmapFonts
 	 * BitmapFontStyle sert à rassembler toutes les tailles de font pour un meme style.<br/>
 	 * Cette classe est utilisée par HTMLBitmapFonts et n'est pas faite pour être utilisée toute seule.
 	 * 
-	 * @see com.lagoon.display.texte.HTMLBitmapFonts
+	 * @see starling.extensions.HTMLBitmapFonts.HTMLBitmapFonts
 	 **/
 	public class BitmapFontStyle
 	{

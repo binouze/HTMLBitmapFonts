@@ -113,11 +113,11 @@ else if( rootNode == "font" )
 		
 		/** 
 		 * définir le style de base pour cette font (le style doit être valide et exister sinon ne sera pas pris en compte) 
-		 * @see com.lagoon.display.texte.BitmapFontStyle
-		 * @see com.lagoon.display.texte.BitmapFontStyle#REGULAR
-		 * @see com.lagoon.display.texte.BitmapFontStyle#BOLD
-		 * @see com.lagoon.display.texte.BitmapFontStyle#ITALIC
-		 * @see com.lagoon.display.texte.BitmapFontStyle#BOLD_ITALIC
+		 * @see starling.extensions.HTMLBitmapFonts.BitmapFontStyle
+		 * @see starling.extensions.HTMLBitmapFonts.BitmapFontStyle#REGULAR
+		 * @see starling.extensions.HTMLBitmapFonts.BitmapFontStyle#BOLD
+		 * @see starling.extensions.HTMLBitmapFonts.BitmapFontStyle#ITALIC
+		 * @see starling.extensions.HTMLBitmapFonts.BitmapFontStyle#BOLD_ITALIC
 		 **/
 		public function set baseStyle( value:int ):void
 		{
