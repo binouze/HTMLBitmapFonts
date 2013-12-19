@@ -1,5 +1,6 @@
 Starling extension for using bitmap fonts with simplified html tags for styling texts
-_sorry all asdoc is in french, i will change it soon_ 
+
+_sorry all asdoc and comments are in french, i will change it soon_ 
 ___
 
 HTMLTextField
