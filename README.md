@@ -66,5 +66,3 @@ ___
 * <em>Only **one font name** can be used in the HTMLTextField, it can only change size, bold, italic, and color</em>
 * <em>All font styles must be on the **same atlas** as the textField is drawed on a QuadBatch</em>
 * <em>No scales are applied on the texts, when adapting the font size it just search within the available sizes</em>
-* <em>HTMLBitmapFont has a static property globalScale (default 1), you can set it to the scale applied on the starling viewport. It will search the best font size to adapt the desired font size without scaling them.</em>
-
