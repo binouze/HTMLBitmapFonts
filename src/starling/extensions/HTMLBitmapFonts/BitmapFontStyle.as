@@ -7,47 +7,44 @@ package starling.extensions.HTMLBitmapFonts
 	import starling.textures.Texture;
 
 	/** 
-	 * BitmapFontStyle sert à rassembler toutes les tailles de font pour un meme style.<br/>
-	 * Cette classe est utilisée par HTMLBitmapFonts et n'est pas faite pour être utilisée toute seule.
+	 * BitmapFontStyle is used to keep all sizes for one font style.<br/>
+	 * This class is used by HTMLBitmapFonts and shouldn't be used as is.
 	 * 
 	 * @see starling.extensions.HTMLBitmapFonts.HTMLBitmapFonts
 	 **/
 	public class BitmapFontStyle
 	{
-		/** la taille a utiliser par défaut en cas de taille invalide durant le parsing **/
-		public static const DEFAULT_SIZE	:int = 12;
-		
-		/** le style régular (=0) **/
+		/** style regular (=0) **/
 		public static const REGULAR		:int = 0;
-		/** le style bold (=1) **/
+		/** style bold (=1) **/
 		public static const BOLD		:int = 1;
-		/** le style italic (=2) **/
+		/** style italic (=2) **/
 		public static const ITALIC		:int = 2;
-		/** le style bold italic (=3) **/
+		/** style bold italic (=3) **/
 		public static const BOLD_ITALIC	:int = 3;
 		
-		/** le nombre de styles **/
+		/** the number of styles availables **/
 		public static const NUM_STYLES	:int = 4;
 		
-		/** le style du BitmapFont **/
+		/** the style of this BitmapFontStyle **/
 		private var mStyle				:int;
-		/** les textures de la police par taille **/
+		/** the textures of the font by sizes **/
 		private var mTextures			:Vector.<Texture>;
-		/** les caracteres de la police par taille **/
+		/** the characters of the font by sizes **/
 		private var mChars				:Vector.<Dictionary>;
-		/** le nom de la police **/
+		/** the name of the font **/
 		private var mName				:String;
-		/** les tailles de base pour la font **/
+		/** the sizes available for the font **/
 		private var mSizes				:Vector.<Number>;
-		/** la hauteur de ligne par taille de font **/
+		/** the lines heights by sizes **/
 		private var mLineHeights		:Vector.<Number>;
 		
 		/** 
-		 * Créer un BitmapFontStyle avec plusieurs tailles de fonts.
-		 * @param name le nom à enregistrer pour la font. si aucun nom n'est donné ('') alors le nom du premier xml sera gardé.
-		 * @param textures le tableau des textures par taille de font.
-		 * @param fontXml le tableau des xml de positionnement des caracteres par taille de font.
-		 * @param sizes le tableau des tailles native de polices. Si null les infos des xml seront gardées.
+		 * Create a BitmapFontStyle for a font.
+		 * @param name the name of the font for registering. if '' is passed, it will be replaced by the first name found during the xml parsing.
+		 * @param textures the array of textures by sizes.
+		 * @param fontXml the xml with font data by sizes.
+		 * @param sizes the array of the sizes, if null the data from the xml will be used.
 		 **/
 		public function BitmapFontStyle( style:int, textures:Vector.<Texture>, fontsXml:Vector.<XML>, sizes:Vector.<Number> = null )
 		{
@@ -109,7 +106,7 @@ package starling.extensions.HTMLBitmapFonts
 			mLineHeights 		= null;
 		}
 		
-		/** ajouter plusieurs tailles de font **/
+		/** add multiple sizes of font **/
 		public function addMultipleSizes( textures:Vector.<Texture>, fontsXml:Vector.<XML>, sizes:Vector.<Number> ):void
 		{
 			// défixer les tailles des tableaux qui vont etre modifiés
@@ -140,7 +137,7 @@ package starling.extensions.HTMLBitmapFonts
 			mChars.fixed 		= true;
 		}
 		
-		/** ajouter une taille de font **/
+		/** add one size of font **/
 		public function add( texture:Texture, xml:XML, size:Number ):void
 		{
 			// ajouter la texture
@@ -167,17 +164,19 @@ package starling.extensions.HTMLBitmapFonts
 			parseFontXml( xml, mTextures.length-1 );
 		}
 		
-		/** parcourir les tableaux et définir les variables de classes utiles **/
+		/** parse multiple xmls **/
 		private function _processXMLs( xmls:Vector.<XML> ):void
 		{
 			for( var i:int = 0; i<xmls.length; ++i )	parseFontXml(xmls[i], i);
 		}
 		
-		/** parser une taille de font **/
+		/** parse a xml font **/
 		private function parseFontXml( fontXml:XML, i:int ):void
 		{
 			var scale	:Number 	= mTextures[i].scale;
 			var frame	:Rectangle 	= mTextures[i].frame;
+			var frameX	:Number 	= frame ? frame.x : 0;
+			var frameY	:Number 	= frame ? frame.y : 0;
 			
 			// si on a pas encore de nom pour la font on récupere celui du xml
 			if( mName == '' )	mName = fontXml.info.attribute("face");
@@ -188,9 +187,15 @@ package starling.extensions.HTMLBitmapFonts
 			mLineHeights[i] = parseFloat( fontXml.common.attribute("lineHeight") ) / scale;
 			
 			// on gere les tailles invalides
-			if( mSizes[i] <= 0 )	mSizes[i] = DEFAULT_SIZE;
+			if( mSizes[i] <= 0 )
+			{
+				//Log.logAll( this, true, "Warning: invalid font size in '" + mName + "' font." );
+				mSizes[i] = 16;
+			}
 			
-			// créer le caractère en fonctin du xml
+			var maxHeight:Number = 0;
+			
+			// créer les caractères en fonction du xml
 			for each( var charElement:XML in fontXml.chars.char )
 			{
 				var id			:int 		= parseInt( charElement.attribute("id") );
@@ -199,8 +204,8 @@ package starling.extensions.HTMLBitmapFonts
 				var xAdvance	:Number 	= parseFloat( charElement.attribute("xadvance") ) / scale;
 				
 				var region		:Rectangle 	= new Rectangle();
-				region.x 					= parseFloat( charElement.attribute("x") ) / scale + frame.x;
-				region.y 					= parseFloat( charElement.attribute("y") ) / scale + frame.y;
+				region.x 					= parseFloat( charElement.attribute("x") ) / scale + frameX;
+				region.y 					= parseFloat( charElement.attribute("y") ) / scale + frameY;
 				region.width  				= parseFloat( charElement.attribute("width") ) / scale;
 				region.height 				= parseFloat( charElement.attribute("height") ) / scale;
 				
@@ -208,7 +213,11 @@ package starling.extensions.HTMLBitmapFonts
 				var bitmapChar	:BitmapChar = new BitmapChar( id, texture, xOffset, yOffset, xAdvance ); 
 				
 				addChar( i, id, bitmapChar );
+				
+				if( yOffset+region.height > maxHeight )		maxHeight = yOffset+region.height;
 			}
+			
+			if( maxHeight > mLineHeights[i] ) 				mLineHeights[i] = maxHeight;
 			
 			// ajouter le kerning
 			for each( var kerningElement:XML in fontXml.kernings.kerning )
@@ -241,7 +250,10 @@ package starling.extensions.HTMLBitmapFonts
 		
 		//-- utils --//
 		
-		/** réduire la taille de tous les éléments du tableau **/
+		/** 
+		 * reduce the size of all sizes in the array, the passed array will be updated with the nexts smallers sizes for each elements 
+		 * @ return true if the sizes has been reduced. Or false if no smaller size could be found. 
+		 **/
 		public function reduceSizes( value:Array ):Boolean
 		{
 			var orig:Number;
@@ -257,7 +269,7 @@ package starling.extensions.HTMLBitmapFonts
 			return reduced;
 		}
 		
-		/** retourne la taille disponible en dessous de la taille value **/
+		/** return the next smaller value for the value **/
 		public function getSmallerSize( value:Number ):Number
 		{
 			var smaller:Number = -1;
@@ -269,33 +281,33 @@ package starling.extensions.HTMLBitmapFonts
 			return smaller > 0 ? smaller : value;
 		}
 		
-		/** retourne la taille disponible en dessous de la taille value **/
+		/** return the available size bigger or equal to the desired value **/
+		[inline]
 		public function getBiggerOrEqualSize( value:Number ):Number
 		{
 			var bigger:Number = int.MAX_VALUE;
+			var biggestDispo:int = 0;
+			var len:int = mSizes.length;
 			
-			for( var i:int = 0; i<mSizes.length; ++i )
+			for( var i:int = 0; i<len; ++i )
 			{
+				if( mSizes[i] > biggestDispo )					biggestDispo = mSizes[i];
 				if( mSizes[i] >= value && mSizes[i] < bigger )	bigger = mSizes[i];
 			}
 			
+			if( bigger > biggestDispo )		bigger = biggestDispo; 
 			return bigger;
 		}
 		
-		/** retourne la taille disponible en dessous de la taille value **/
+		/** return the index of the available size bigger or equal to the desired value **/
+		[inline]
 		public function getBiggerOrEqualSizeIndex( value:Number ):Number
 		{
 			var bigger:Number = getBiggerOrEqualSize(value);
-			
-			for( var i:int = 0; i<mSizes.length; ++i )
-			{
-				if( mSizes[i] == bigger )	return i;
-			}
-			
-			return -1;
+			return mSizes.indexOf(bigger);
 		}
 		
-		/** retourner la plus grande taille à générer **/
+		/** return the biggest size in the array **/
 		public function getBiggestSize( value:Array ):Number
 		{
 			var biggestSize	:Number = 0;
@@ -303,7 +315,7 @@ package starling.extensions.HTMLBitmapFonts
 			return biggestSize;
 		}
 		
-		/** retourner l'index de la plus grande taille à générer **/
+		/** return the index of the biggest available size in the array **/
 		public function getBiggestSizeIndex( value:Array ):int
 		{
 			var biggestSize	:Number = getBiggestSize(value);
@@ -317,13 +329,14 @@ package starling.extensions.HTMLBitmapFonts
 			return 0;
 		}
 		
-		/** retourne la hauteur de ligne pour la taille de police passée en argument **/
+		/** return the line height for the size **/
 		public function getLineHeightForSize(size:Number):Number
 		{
-			return mLineHeights[getBiggerOrEqualSizeIndex(size)];
+			var i:int = getBiggerOrEqualSizeIndex(size);
+			return mLineHeights[i];
 		}
 		
-		/** retourne une taille de police avec une hauteur de ligne au plus proche de celle souhaitée **/
+		/** return the closer available font size for the line height **/
 		public function getSizeForLineHeight( lineHeight:Number ):Number
 		{
 			var idActu		:int = 0;
@@ -341,6 +354,12 @@ package starling.extensions.HTMLBitmapFonts
 			}
 			
 			return mSizes[idActu];
+		}
+		
+		/** returns available sizes **/
+		public function get availableSizes():Vector.<Number>
+		{
+			return mSizes;
 		}
 	}
 }
