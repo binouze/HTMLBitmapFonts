@@ -18,18 +18,18 @@ package starling.extensions.HTMLBitmapFonts
 	 *
 	 * <listing>
 	 &lt;font&gt;
-		 &lt;info face="BranchingMouse" size="40" /&gt;
-		 &lt;common lineHeight="40" /&gt;
-		 &lt;pages&gt; &lt;!-- currently, only one page is supported --&gt;
-			 &lt;page id="0" file="texture.png" /&gt;
-		 &lt;/pages&gt;
-		 &lt;chars&gt;
-			 &lt;char id="32" x="60" y="29" width="1" height="1" xoffset="0" yoffset="27" xadvance="8" /&gt;
-			 &lt;char id="33" x="155" y="144" width="9" height="21" xoffset="0" yoffset="6" xadvance="9" /&gt;
-		 &lt;/chars&gt;
-		 &lt;kernings&gt; &lt;!-- Kerning is optional --&gt;
-			 &lt;kerning first="83" second="83" amount="-4"/&gt;
-		 &lt;/kernings&gt;
+	 &lt;info face="BranchingMouse" size="40" /&gt;
+	 &lt;common lineHeight="40" /&gt;
+	 &lt;pages&gt; &lt;!-- currently, only one page is supported --&gt;
+	 &lt;page id="0" file="texture.png" /&gt;
+	 &lt;/pages&gt;
+	 &lt;chars&gt;
+	 &lt;char id="32" x="60" y="29" width="1" height="1" xoffset="0" yoffset="27" xadvance="8" /&gt;
+	 &lt;char id="33" x="155" y="144" width="9" height="21" xoffset="0" yoffset="6" xadvance="9" /&gt;
+	 &lt;/chars&gt;
+	 &lt;kernings&gt; &lt;!-- Kerning is optional --&gt;
+	 &lt;kerning first="83" second="83" amount="-4"/&gt;
+	 &lt;/kernings&gt;
 	 &lt;/font&gt;
 	 * </listing>
 	 * 
@@ -39,18 +39,18 @@ package starling.extensions.HTMLBitmapFonts
 	 * 
 	 else if( rootNode == "font" )
 	 {
-		 name 	= xml.info.&#64;face.toString();
-		 fileName 	= getName(xml.pages.page.&#64;file.toString());
-		 isBold 	= xml.info.&#64;bold == 1;
-		 isItalic 	= xml.info.&#64;italic == 1;
-		 
-		 log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
-		 
-		 fontTexture = getTexture( fileName );
-		 HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.&#64;size, isBold, isItalic, name.toLowerCase() );
-		 removeTexture( fileName, false );
-		 
-		 mLoadedHTMLFonts.push( name.toLowerCase() );
+	 name 	= xml.info.&#64;face.toString();
+	 fileName 	= getName(xml.pages.page.&#64;file.toString());
+	 isBold 	= xml.info.&#64;bold == 1;
+	 isItalic 	= xml.info.&#64;italic == 1;
+	 
+	 log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
+	 
+	 fontTexture = getTexture( fileName );
+	 HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.&#64;size, isBold, isItalic, name.toLowerCase() );
+	 removeTexture( fileName, false );
+	 
+	 mLoadedHTMLFonts.push( name.toLowerCase() );
 	 }
 	 * </listing>
 	 */ 
@@ -87,9 +87,9 @@ package starling.extensions.HTMLBitmapFonts
 		/** the base size for the font: the fisrt size added **/
 		private var _baseSize						:int = -1;
 		/** the globalScale fio the font, to get the near same result even if we apply scaling on Starling viewport. (usefull for android devices) **/
-		//private static var _globalScale				:Number = 1;
+		private static var _globalScale				:Number = 1;
 		/** the actual scale depending if we found a font for this globalScale **/
-		//private var _currentScale					:Number = 1;
+		private var _currentScale					:Number = 1;
 		
 		/** the font styles **/
 		private var mFontStyles						:Vector.<BitmapFontStyle>;
@@ -157,10 +157,10 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** Définir un scale global qui sera appliqué à tous les textes et qui sera utilisé pour trouver une taille de texte équivalente sans scaler le texte **/
-		/*public static function set globalScale( value:Number ):void
+		public static function set globalScale( value:Number ):void
 		{
-		_globalScale = value;
-		}*/
+			_globalScale = value;
+		}
 		
 		/** define the base size for the font **/
 		public function set baseSize( value:Number ):void
@@ -266,12 +266,14 @@ package starling.extensions.HTMLBitmapFonts
 		 * @param autoScale (default true) if true the text will be reduced for fiting the container size (if smaller font size are available)
 		 * @param kerning (default true) true if you want to use kerning
 		 * @param resizeQuad (default false) if true, the Quad can be bigger tahn width, height if the texte cannot fit. 
+		 * @param keepDatas (default null) don't delete the Vector.<CharLocation> at the end if a subclass need it.
+		 * @param autoCR (default true) do auto line break or not.
 		 **/
 		public function fillQuadBatch(quadBatch:QuadBatch, width:Number, height:Number, text:String,
 									  fontSizes:Array = null, styles:Array = null, colors:Array = null, 
 									  hAlign:String="center", vAlign:String="center",      
 									  autoScale:Boolean=true, 
-									  kerning:Boolean=true, resizeQuad:Boolean = false ):void
+									  kerning:Boolean=true, resizeQuad:Boolean = false, keepDatas:Object = null, autoCR:Boolean = true ):void
 		{
 			// découper le tableau de couleur pour ignorer les caracteres a remplacer par des emotes
 			if( _emotesTxt )
@@ -290,7 +292,12 @@ package starling.extensions.HTMLBitmapFonts
 			}
 			
 			// générer le tableau de CharLocation
-			var charLocations	:Vector.<CharLocation> 	= arrangeChars( width, height, text, fontSizes.concat(), styles.concat(), hAlign, vAlign, autoScale, kerning, resizeQuad );
+			var charLocations	:Vector.<CharLocation> 	= arrangeChars( width, height, text, fontSizes.concat(), styles.concat(), hAlign, vAlign, autoScale, kerning, resizeQuad, autoCR );
+			
+			// cas foireux pour le texte qui apparait mots à mots
+			if( keepDatas )		keepDatas.loc = charLocations;
+			if( !quadBatch )	return;
+			
 			// récupérer le nombre de caractères à traiter
 			var numChars		:int 					= charLocations.length;
 			
@@ -367,7 +374,7 @@ package starling.extensions.HTMLBitmapFonts
 		
 		/** Arranges the characters of a text inside a rectangle, adhering to the given settings. 
 		 *  Returns a Vector of CharLocations. */
-		private function arrangeChars( width:Number, height:Number, text:String, fontSizes:Array = null, styles:Array = null, hAlign:String="center", vAlign:String="center", autoScale:Boolean=true, kerning:Boolean=true, resizeQuad:Boolean = false ):Vector.<CharLocation>
+		private function arrangeChars( width:Number, height:Number, text:String, fontSizes:Array = null, styles:Array = null, hAlign:String="center", vAlign:String="center", autoScale:Boolean=true, kerning:Boolean=true, resizeQuad:Boolean = false, autoCR:Boolean = true ):Vector.<CharLocation>
 		{
 			// si pas de texte on renvoi un tableau vide
 			if( text == null || text.length == 0 ) 		return getVCharLoc();
@@ -379,7 +386,7 @@ package starling.extensions.HTMLBitmapFonts
 			if( !fontSizes || fontSizes.length == 0 )	fontSizes 	= [_baseSize];
 			
 			// trouver des tailles adaptées en fonction du scale global de l'application
-			//if( _globalScale != 1 )		fontSizes = _getSizeForActualScale( fontSizes, styles );
+			if( _globalScale != 1 )						fontSizes = _getSizeForActualScale( fontSizes, styles );
 			
 			// passe a true une fois qu'on a fini de rendre le texte
 			var finished			:Boolean = false;
@@ -393,14 +400,14 @@ package starling.extensions.HTMLBitmapFonts
 			var sizeActu			:int;
 			// la style de font du caractere actuel
 			var styleActu			:int;
-			/*// la largeur du conteneur
+			// la largeur du conteneur
 			var containerWidth		:Number = width / _currentScale;
 			// la hauteur du conteneur
-			var containerHeight		:Number = height / _currentScale;*/
+			var containerHeight		:Number = height / _currentScale;
 			// la largeur du conteneur
-			var containerWidth		:Number = width;
+			/*var containerWidth		:Number = width;
 			// la hauteur du conteneur
-			var containerHeight		:Number = height;
+			var containerHeight		:Number = height;*/
 			
 			while( !finished )
 			{
@@ -510,13 +517,13 @@ package starling.extensions.HTMLBitmapFonts
 							// new line
 							//if( charID == CHAR_NEWLINE || charID == CHAR_CARRIAGE_RETURN )	lineFull = true;
 							// fin de ligne car dépassement de la largeur du conteneur
-							if( charLocation.x + char.width > containerWidth )
+							if( !resizeQuad && charLocation.x + char.width > containerWidth )
 							{
 								// si autoscale est a true on ne doit pas couper le mot en 2
-								if( autoScale && lastWhiteSpace == -1 )		break;
+								if( !autoCR || (autoScale && lastWhiteSpace == -1) )		break;
 								
 								// si on a eu un espace on va couper apres le dernier espace sinon on coupe à lindex actuel
-								var numCharsToRemove	:int = lastWhiteSpace == -1 ? 1 : i - lastWhiteSpace;
+								var numCharsToRemove	:int = lastWhiteSpace == -1 ? 1 : i - lastWhiteSpace + 1;
 								var removeIndex			:int = currentLine.length - numCharsToRemove;
 								
 								// couper la ligne
@@ -526,7 +533,11 @@ package starling.extensions.HTMLBitmapFonts
 								for( var t:int = 0; t<l; ++t )
 								{
 									if( t < removeIndex || t >= removeIndex+numCharsToRemove )	temp.push( currentLine[t] );
-									else														returnCharLoc( currentLine[t] );
+									else														
+									{
+										returnCharLoc( currentLine[t] );
+										currentLine[t] = null;
+									}
 								}
 								returnVCharLoc( currentLine );
 								currentLine = temp;
@@ -554,7 +565,7 @@ package starling.extensions.HTMLBitmapFonts
 						{
 							lines.push( currentLine );
 							linesSizes.push( currentMaxSize );
-							currentMaxSize = 0;
+							//currentMaxSize = 0;
 							finished = true;
 						}
 							// fin de ligne
@@ -630,7 +641,7 @@ package starling.extensions.HTMLBitmapFonts
 			// le nombre de lignes
 			var numLines		:int 					= lines.length;
 			// le y max du texte
-			var bottom			:Number 				= currentY + biggestLineHeight;
+			var bottom			:Number 				= currentY + currentMaxSize;//biggestLineHeight;
 			// l'offset y
 			var yOffset			:int 					= 0;
 			// la ligne à traiter
@@ -712,11 +723,11 @@ package starling.extensions.HTMLBitmapFonts
 							charLocation.y += linesSizes[lineID] - mFontStyles[charLocation.style].getLineHeightForSize(charLocation.size);
 						
 						// appliquer l'offset y et le _globalScale à la positon y du caractère
-						//charLocation.y 		= _currentScale * (charLocation.y + yOffset );
-						charLocation.y 		= charLocation.y + yOffset;
+						charLocation.y 		= _currentScale * (charLocation.y + yOffset );
+						//charLocation.y 		= charLocation.y + yOffset;
 						// appliquer le globalScale au scale du caractère
-						//charLocation.scale 	= _currentScale;
-						charLocation.scale 	= 1;
+						charLocation.scale 	= _currentScale;
+						//charLocation.scale 	= 1;
 						// ajouter le caractere au tableau
 						finalLocations.push(charLocation);
 					}
@@ -732,53 +743,53 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** retourne un tableau avec les nouvelle taille a appliquer en fonction du scale général de l'application **/
-		[inline]
-		/*private function _getSizeForActualScale( sizes:Array, styles:Array ):Array
+		[Inline]
+		private final function _getSizeForActualScale( sizes:Array, styles:Array ):Array
 		{
-		// le scale actuel de starling
-		var scale		:Number = 1/_globalScale;
-		// la valeur max à retourner
-		var newSizes	:Array = [];
-		// la taille de ligne pour le caractere actuel
-		var lineActu	:Number;
-		// la taille de font du caractere actuel
-		var sizeActu	:int;
-		// la style de font du caractere actuel
-		var styleActu	:int;
-		
-		// récupérer la taille du plus grand des tableaux
-		var len			:int = sizes.length;
-		
-		for( var i:int = 0; i<len; ++i )
-		{
-		// récupérer la taille actuelle
-		sizeActu = sizes[i];
-		// récupérer le syle actuel
-		if( i < styles.length )			styleActu = styles[i];
-		// style erroné on prend le stle de base
-		if( styleActu > BitmapFontStyle.NUM_STYLES || !mFontStyles[styleActu] )	styleActu = _baseStyle;
-		// récupérer la hauteur de ligne pour ce style et cette taille
-		lineActu = mFontStyles[styleActu].getLineHeightForSize(sizeActu) * scale;
-		// trouver une taille de font correspondante
-		newSizes[i] = mFontStyles[styleActu].getSizeForLineHeight(lineActu);
-		
-		if( mFontStyles[styleActu].getLineHeightForSize(newSizes[i]) > lineActu )
-		{
-		_currentScale = 1;
-		return sizes;
+			// le scale actuel de starling
+			var scale		:Number = 1/_globalScale;
+			// la valeur max à retourner
+			var newSizes	:Array = [];
+			// la taille de ligne pour le caractere actuel
+			var lineActu	:Number;
+			// la taille de font du caractere actuel
+			var sizeActu	:int;
+			// la style de font du caractere actuel
+			var styleActu	:int;
+			
+			// récupérer la taille du plus grand des tableaux
+			var len			:int = sizes.length;
+			
+			for( var i:int = 0; i<len; ++i )
+			{
+				// récupérer la taille actuelle
+				sizeActu = sizes[i];
+				// récupérer le syle actuel
+				if( i < styles.length )			styleActu = styles[i];
+				// style erroné on prend le stle de base
+				if( styleActu > BitmapFontStyle.NUM_STYLES || !mFontStyles[styleActu] )	styleActu = _baseStyle;
+				// récupérer la hauteur de ligne pour ce style et cette taille
+				lineActu = mFontStyles[styleActu].getLineHeightForSize(sizeActu) * scale;
+				// trouver une taille de font correspondante
+				newSizes[i] = mFontStyles[styleActu].getSizeForLineHeight(lineActu);
+				
+				if( mFontStyles[styleActu].getLineHeightForSize(newSizes[i]) > lineActu )
+				{
+					_currentScale = 1;
+					return sizes;
+				}
+			}
+			
+			// mettre à jour le scale global
+			_currentScale = 1/scale;
+			
+			// retourner les nouvelles tailles et le nouveau scale
+			return newSizes;
 		}
-		}
-		
-		// mettre à jour le scale global
-		_currentScale = 1/scale;
-		
-		// retourner les nouvelles tailles et le nouveau scale
-		return newSizes;
-		}*/
 		
 		/** return the biggest line height **/
-		[inline]
-		private function _getBiggestLineHeight( sizes:Array, styles:Array ):Number
+		[Inline]
+		private final function _getBiggestLineHeight( sizes:Array, styles:Array ):Number
 		{
 			// la valeur max à retourner
 			var max			:Number = 0;
@@ -814,8 +825,8 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** reduce the size of all items in the array **/
-		[inline]
-		private function _reduceSizes( sizes:Array, styles:Array ):Boolean
+		[Inline]
+		private final function _reduceSizes( sizes:Array, styles:Array ):Boolean
 		{
 			// la taille d'origine avant d'essayer de reduire
 			var orig		:Number;
@@ -865,3 +876,5 @@ package starling.extensions.HTMLBitmapFonts
 		}
 	}
 }
+import starling.extensions.HTMLBitmapFonts;
+

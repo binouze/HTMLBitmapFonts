@@ -1,5 +1,10 @@
 package starling.extensions.HTMLBitmapFonts
 {
+	import com.lagoon.machinko.models.CommonAssets;
+	import com.lagoon.machinko.models.ModelParamsTextes;
+	import com.lagoon.utils.texte.LocaleParser;
+	import com.lagoon.utils.texte.LocaleString;
+	
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -28,66 +33,71 @@ package starling.extensions.HTMLBitmapFonts
 		/** available fonts **/
 		public static var htmlBitmapFonts		:Dictionary;
 		
-		/** evenement lorsque le texte se met a jour **/
-		public static const UPDATE				:String				= 'textUpdated';
-		
 		/** Helper objects. */
-		private static var sHelperMatrix		:Matrix 			= new Matrix();
+		protected static var sHelperMatrix		:Matrix 			= new Matrix();
 		
 		/** true when a redraw is needed **/
-		private var mRequiresRedraw	:Boolean;
+		protected var _mRequiresRedraw	:Boolean;
 		
 		//-- variables pour le texte standard --//
 		
 		/** the size of the text **/
-		private var mSize			:Number;
+		protected var mSize				:Number;
 		/** the color of the text **/
-		private var mColor			:*;
+		protected var mColor			:*;
 		/** the style of the text **/
-		private var mStyle			:uint;
+		protected var mStyle			:uint;
 		/** the text (without html formatting) **/
-		private var mText			:String;
+		protected var mText				:String;
 		/** the font name **/
-		private var mFontName		:String;
+		protected var mFontName			:String;
 		/** the halign rule **/
-		private var mHAlign			:String;
+		protected var mHAlign			:String;
 		/** the vAlign rule **/
-		private var mVAlign			:String;
+		protected var mVAlign			:String;
 		/** bold **/
-		private var mBold			:Boolean;
+		protected var mBold				:Boolean;
 		/** italic **/
-		private var mItalic			:Boolean;
+		protected var mItalic			:Boolean;
 		/** if true the text will be resized to fit in the width / height area (use only font size added the the BitmapFontStyle) **/
-		private var mAutoScale		:Boolean;
+		protected var mAutoScale		:Boolean;
 		/** use kerning **/
-		private var mKerning		:Boolean;
+		protected var mKerning			:Boolean;
 		
 		//-- variables utiles pour le texte html --//
 		
 		/** true if text is HTML text **/
-		private var mIsHTML			:Boolean;
+		protected var mIsHTML			:Boolean;
 		/** the html text **/
-		private var mTextHTML		:String;
+		protected var mTextHTML			:String;
 		/** the sizes list **/
-		private var mSizes			:Array;
+		protected var mSizes			:Array = [];
 		/** the styles list **/
-		private var mStyles			:Array;
+		protected var mStyles			:Array = [];
 		/** the color list **/
-		private var mColors			:Array;
-		private var mLineSpacing	:int = 0;
+		protected var mColors			:Array = [];
+		/** the line spacing **/
+		protected var mLineSpacing		:int = 0;
 		
 		/** text bounds **/
-		private var mTextBounds		:Rectangle;
+		protected var mTextBounds		:Rectangle;
 		/** hit area **/
-		private var mHitArea		:Rectangle;
+		protected var mHitArea			:Rectangle;
 		
 		/** the quadBatch **/
-		private var mQuadBatch		:QuadBatch;
+		protected var mQuadBatch		:QuadBatch;
+		/** an other quadBatch **/
+		protected var mExportedQuad		:QuadBatch;
 		
-		/** if true, the size will be elarged to contain the text **/
-		private var _resizeField	:Boolean = false;
-		private var _baseWidth		:int;
-		private var _baseHeight		:int;
+		/** if true, the size will be enlarged to contain the text **/
+		public var resizeField			:Boolean = false;
+		/** the base width of the textField (before resizing) **/
+		protected var _baseWidth		:int;
+		/** the base height of the textField (before resizing) **/
+		protected var _baseHeight		:int;
+		
+		/** auto line break if line not fit in the width **/
+		public var autoCR				:Boolean = true;
 		
 		/** Create a new text field with the given properties. */
 		public function HTMLTextField( width:int, height:int, text:* = '', fontName:String='verdana', fontSize:int = 16, color:uint = 0xFFFFFF, bold:Boolean = false, italic:Boolean = false, isHtml:Boolean = true, resizeField:Boolean = false )
@@ -96,7 +106,7 @@ package starling.extensions.HTMLBitmapFonts
 			if( !htmlBitmapFonts ) 	htmlBitmapFonts = new Dictionary();
 			
 			// définir la police du textField
-			this.fontName = fontName.toLowerCase();
+			this.fontName 	= fontName.toLowerCase();
 			
 			// définir les valeurs par défaut pour le textField
 			mSize 			= fontSize;
@@ -107,7 +117,7 @@ package starling.extensions.HTMLBitmapFonts
 			mBold 			= bold;
 			mItalic			= italic;
 			mIsHTML			= isHtml;
-			_resizeField 	= resizeField;
+			this.resizeField = resizeField;
 			_baseWidth		= width>0?width:1;
 			_baseHeight		= height>0?height:1;
 			
@@ -129,33 +139,52 @@ package starling.extensions.HTMLBitmapFonts
 			addEventListener( Event.FLATTEN, onFlatten );
 		}
 		
+		/**
+		 * @private
+		 */
+		protected function set mRequiresRedraw(value:Boolean):void
+		{
+			_mRequiresRedraw 		= value;
+			if( value )				requiresRedrawQuadBatch = value;
+			if( mExportedQuad )		updateExportedQuad();
+		}
+		
 		/** dispose textures data. */
 		public override function dispose():void
 		{
 			removeEventListener(Event.FLATTEN, onFlatten);
 			
+			//mTextHTML = mText = '';
+			
 			// disposer le QuadBatch du texte
 			if( mQuadBatch )		mQuadBatch.dispose();
+			// disposer le QuadBatch exporté
+			if( mExportedQuad )		mExportedQuad.dispose();
 			
 			super.dispose();
 		}
 		
 		/** redraw contents if needed **/
-		private function onFlatten():void
+		protected function onFlatten():void
 		{
-			if( mRequiresRedraw ) 	redrawContents();
+			if( _mRequiresRedraw ) 	redrawContents();
 		}
 		
 		/** @inheritDoc */
 		public override function render(support:RenderSupport, parentAlpha:Number):void
 		{
-			if( mRequiresRedraw ) 	redrawContents();
+			if( _mRequiresRedraw ) 	redrawContents();
 			super.render(support, parentAlpha);
 		}
 		
 		/** redraw the content of the text field **/
-		private function redrawContents():void
+		protected function redrawContents():void
 		{
+			// sera recréé à la demande
+			mTextBounds 		= null; 	
+			// on vien de refaire un redraw c'est plus à faire
+			mRequiresRedraw 	= false;	
+			
 			// créer ou reset le quad batch
 			if( mQuadBatch == null ) 
 			{ 
@@ -190,24 +219,21 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// on fait draw le texte en fonction des parametres
 			bitmapFont.lineSpacing = mLineSpacing;
-			bitmapFont.fillQuadBatch( mQuadBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, _resizeField );
+			bitmapFont.fillQuadBatch( mQuadBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, resizeField, null, autoCR );
 			
-			if( _resizeField )
+			if( resizeField )
 			{
 				mHitArea.width 	= _baseWidth >= mQuadBatch.width ? _baseWidth : mQuadBatch.width;
 				mHitArea.height = _baseHeight >= mQuadBatch.height ? _baseHeight : mQuadBatch.height;
 			}
 			
-			// sera recréé à la demande
-			mTextBounds 		= null; 	
-			// on vien de refaire un redraw c'est plus à faire
-			mRequiresRedraw 	= false;	
+			if( requiresRedrawQuadBatch && mExportedQuad )		this.updateExportedQuad();
 		}
 		
 		/** get the bounds of the text. */
 		public function get textBounds():Rectangle
 		{
-			if( mRequiresRedraw ) 		redrawContents();
+			if( _mRequiresRedraw ) 		redrawContents();
 			if( mTextBounds == null ) 	mTextBounds = mQuadBatch.getBounds( mQuadBatch );
 			return mTextBounds.clone();
 		}
@@ -254,35 +280,41 @@ package starling.extensions.HTMLBitmapFonts
 		/** get the text width **/
 		public function get textWidth():Number
 		{
-			if( mRequiresRedraw ) 		redrawContents();
+			if( _mRequiresRedraw ) 		redrawContents();
 			return mQuadBatch ? mQuadBatch.width : 0;
 		}
 		/** get the text height **/
 		public function get textHeight():Number
 		{
-			if( mRequiresRedraw ) 		redrawContents();
+			if( _mRequiresRedraw ) 		redrawContents();
 			return  mQuadBatch ? mQuadBatch.height : 0;
 		}
 		
 		/** 
 		 * the text, use htmlText to use simplified HTML
 		 **/
-		public function get text():* { return mText; }
-		public function set text(value:*):void
+		public function get text():String { return mText; }
+		public function set text(value:String):void
 		{
+			if( mText == value )	return;
+			
 			mIsHTML 		= false;
 			mText 			= value;
+			mTextHTML 		= mText;
 			mRequiresRedraw = true;
 		}
 		
 		/** 
 		 * the simplified HTML text to show
 		 **/
-		public function get htmlText():* { return mTextHTML; }
-		public function set htmlText(value:*):void
+		public function get htmlText():String { return mTextHTML; }
+		public function set htmlText(value:String):void
 		{
+			if( mTextHTML == value )	return;
+			
 			mIsHTML 		= true;
 			mTextHTML 		= value;
+			
 			_parseTextHTML();
 			mRequiresRedraw = true;
 		}
@@ -290,7 +322,7 @@ package starling.extensions.HTMLBitmapFonts
 		/** 
 		 * Parse simplified HTML
 		 **/
-		private function _parseTextHTML():void
+		protected function _parseTextHTML():void
 		{
 			mText = '';
 			
@@ -304,9 +336,9 @@ package starling.extensions.HTMLBitmapFonts
 			mTextHTML = mTextHTML.split( String.fromCharCode(149) ).join( String.fromCharCode(8226) );
 			
 			// reset arrays
-			mSizes 	= [];
-			mStyles = [];
-			mColors = [];
+			mSizes.length = 0;
+			mStyles.length = 0;
+			mColors.length = 0;
 			
 			var sizeActu	:int 	= mSize;
 			var colorActu	:* 		= mColor; // color or gradient
@@ -451,6 +483,7 @@ package starling.extensions.HTMLBitmapFonts
 			if( mSize != value )
 			{
 				mSize = value;
+				mSizes = [mSize];
 				mRequiresRedraw = true;
 			}
 		}
@@ -466,6 +499,7 @@ package starling.extensions.HTMLBitmapFonts
 				if( value is int )
 				{
 					mColor = value;
+					
 				}
 				else if( value is Array )
 				{
@@ -502,6 +536,8 @@ package starling.extensions.HTMLBitmapFonts
 				{
 					throw new Error('color must be uint or Array');
 				}
+				
+				mColors = [mColor];
 				
 				mRequiresRedraw = true;
 			}
@@ -549,6 +585,7 @@ package starling.extensions.HTMLBitmapFonts
 				else if( mBold )			mStyle = BitmapFontStyle.BOLD;
 				else if( mItalic )			mStyle = BitmapFontStyle.ITALIC;
 				
+				mStyles = [mStyle];
 				mRequiresRedraw = true;
 			}
 		}
@@ -569,6 +606,7 @@ package starling.extensions.HTMLBitmapFonts
 				else if( mBold )			mStyle = BitmapFontStyle.BOLD;
 				else if( mItalic )			mStyle = BitmapFontStyle.ITALIC;
 				
+				mStyles = [mStyle];
 				mRequiresRedraw = true;
 			}
 		}
@@ -601,13 +639,14 @@ package starling.extensions.HTMLBitmapFonts
 			}
 		}
 		
-		/** change line spacing **/
+		/** changer l'espacement entre les lignes **/
 		public function get lineSpacing():int { return mLineSpacing; }
 		public function set lineSpacing( value:int ):void
 		{
 			mLineSpacing = value;
 			mRequiresRedraw = true;
 		}
+		
 		
 		/** 
 		 * force redraw 
@@ -651,13 +690,63 @@ package starling.extensions.HTMLBitmapFonts
 			return htmlBitmapFonts[name];
 		}
 		
+		protected var requiresRedrawQuadBatch:Boolean = false;
+		
+		/** recuperer le quad batch du champ texte si la font est un BitmapFont **/
+		public function get quadBatch():QuadBatch
+		{
+			if( !mExportedQuad )			
+			{
+				mExportedQuad = new QuadBatch();
+				mExportedQuad.touchable = false;
+				mExportedQuad.batchable = true;
+			}
+			if( requiresRedrawQuadBatch )	updateExportedQuad();
+			return mExportedQuad;
+		}
+		
+		protected function updateExportedQuad():void
+		{
+			requiresRedrawQuadBatch = false;
+			
+			var bitmapFont:HTMLBitmapFonts = htmlBitmapFonts[mFontName.toLowerCase()];
+			if (bitmapFont == null) throw new Error("Bitmap font not registered: " + mFontName);
+			
+			mExportedQuad.x 		= this.x;
+			mExportedQuad.y 		= this.y;
+			mExportedQuad.scaleX 	= this.scaleX;
+			mExportedQuad.scaleY 	= this.scaleY;
+			mExportedQuad.pivotX 	= this.pivotX;
+			mExportedQuad.pivotY 	= this.pivotY;
+			
+			mExportedQuad.reset();
+			// si html text on applique les tableaux de taille style et couleurs
+			var sizes	:Array = mSizes && mSizes.length > 0 	? mSizes 	: [mSize];
+			var styles	:Array = mStyles && mStyles.length > 0 	? mStyles 	: [mStyle];
+			var colors	:Array = mColors && mColors.length > 0 	? mColors 	: [mColor];
+			
+			// sinon on met les valeurs de base
+			if( !mIsHTML )
+			{
+				sizes 	= [mSize];
+				styles 	= [mStyle];
+				colors 	= [mColor];
+			}
+			
+			// générer le texte
+			bitmapFont.lineSpacing = mLineSpacing;
+			bitmapFont.fillQuadBatch( mExportedQuad, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, resizeField, null, autoCR );
+			
+			if( mExportedQuad.hasEventListener('update') )	mExportedQuad.dispatchEventWith( 'update' );
+		}
+		
 		/** 
-		 * Apply the text to a QuadBatch
-		 * @param quadBatch the QuadBatch to fill
-		 * @param applySize if true, the sizes of the textField will be applied
-		 * @param applyPos if true, the positions will be applied
-		 * @param applyScale if true, the scale will be applied
-		 * @param applyPivot if( true, the pivot will be applied
+		 * Appliquer le TextField à un Quadbatch, le quad batch sera rempli avec les memes données que le textField
+		 * @param quadBatch le QuadBatch à remplir
+		 * @param applySize si true on appliquera les tailles du textField au quadBatch
+		 * @param applyPos si true on appliquera les positions du textField au quadBatch
+		 * @param applyScale si true on appliquara les scales du textField au quadBatch
+		 * @param applyPivot si true, on appliquera les pivots du textField au quadBatch
 		 **/
 		public function fillQuadBatch( quadBatch:QuadBatch, applySize:Boolean = false, applyPos:Boolean = false, applyScale:Boolean = false, applyPivot:Boolean = false ):void
 		{
@@ -715,12 +804,39 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// générer le texte
 			bitmapFont.lineSpacing = mLineSpacing;
-			bitmapFont.fillQuadBatch( quadBatch, ww, hh, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, _resizeField );
+			bitmapFont.fillQuadBatch( quadBatch, ww, hh, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, resizeField, null, autoCR );
 		}
 		
 		public function getAvailableSizes( style:int ):Vector.<Number>
 		{
 			return HTMLBitmapFonts(htmlBitmapFonts[mFontName]).getAvailableSizesForStyle( style );
 		}
+		
+		override public function set x(value:Number):void
+		{
+			super.x = int(value);
+			//mRequiresRedraw = true;
+			requiresRedrawQuadBatch = true;
+			if( mExportedQuad )	updateExportedQuad();
+		}
+		override public function set y(value:Number):void
+		{
+			super.y = int(value);
+			//mRequiresRedraw = true;
+			requiresRedrawQuadBatch = true;
+			if( mExportedQuad )	updateExportedQuad();
+		}
+		
+		public function get xx():Number{ return super.x };
+		public function set xx(value:Number):void
+		{
+			super.x = value;
+		}
+		public function get yy():Number{ return super.y };
+		public function set yy(value:Number):void
+		{
+			super.y = value;
+		}
 	}
 }
+
