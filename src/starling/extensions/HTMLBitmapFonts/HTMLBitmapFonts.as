@@ -876,5 +876,3 @@ package starling.extensions.HTMLBitmapFonts
 		}
 	}
 }
-import starling.extensions.HTMLBitmapFonts;
-

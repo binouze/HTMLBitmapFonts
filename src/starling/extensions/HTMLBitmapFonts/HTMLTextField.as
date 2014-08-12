@@ -1,10 +1,5 @@
 package starling.extensions.HTMLBitmapFonts
 {
-	import com.lagoon.machinko.models.CommonAssets;
-	import com.lagoon.machinko.models.ModelParamsTextes;
-	import com.lagoon.utils.texte.LocaleParser;
-	import com.lagoon.utils.texte.LocaleString;
-	
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
