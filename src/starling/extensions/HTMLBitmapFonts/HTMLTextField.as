@@ -3,6 +3,10 @@ package starling.extensions.HTMLBitmapFonts
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.net.URLRequest;
+	import flash.net.navigateToURL;
+	import flash.ui.Mouse;
+	import flash.ui.MouseCursor;
 	import flash.utils.Dictionary;
 	
 	import starling.core.RenderSupport;
@@ -10,6 +14,9 @@ package starling.extensions.HTMLBitmapFonts
 	import starling.display.DisplayObjectContainer;
 	import starling.display.QuadBatch;
 	import starling.events.Event;
+	import starling.events.Touch;
+	import starling.events.TouchEvent;
+	import starling.events.TouchPhase;
 	import starling.textures.Texture;
 	import starling.utils.HAlign;
 	import starling.utils.RectangleUtil;
@@ -29,7 +36,7 @@ package starling.extensions.HTMLBitmapFonts
 		public static var htmlBitmapFonts		:Dictionary;
 		
 		/** Helper objects. */
-		protected static var sHelperMatrix		:Matrix 			= new Matrix();
+		protected static var sHelperMatrix		:Matrix = new Matrix();
 		
 		/** true when a redraw is needed **/
 		protected var _mRequiresRedraw	:Boolean;
@@ -71,6 +78,10 @@ package starling.extensions.HTMLBitmapFonts
 		protected var mStyles			:Array = [];
 		/** the color list **/
 		protected var mColors			:Array = [];
+		/** the links list **/
+		protected var mLinks			:Array;
+		/** les rectangles de touch pour les lnks **/
+		protected var mLinksRect		:Vector.<Rectangle>;
 		/** the line spacing **/
 		protected var mLineSpacing		:int = 0;
 		
@@ -81,17 +92,13 @@ package starling.extensions.HTMLBitmapFonts
 		
 		/** the quadBatch **/
 		protected var mQuadBatch		:QuadBatch;
-		/** an other quadBatch **/
-		protected var mExportedQuad		:QuadBatch;
 		
 		/** if true, the size will be enlarged to contain the text **/
 		public var resizeField			:Boolean = false;
-		/** the base width of the textField (before resizing) **/
 		protected var _baseWidth		:int;
-		/** the base height of the textField (before resizing) **/
 		protected var _baseHeight		:int;
 		
-		/** auto line break if line not fit in the width **/
+		/** retour a la ligne auto si le texte ne rentre pas dans la largeur **/
 		public var autoCR				:Boolean = true;
 		
 		/** Create a new text field with the given properties. */
@@ -101,7 +108,7 @@ package starling.extensions.HTMLBitmapFonts
 			if( !htmlBitmapFonts ) 	htmlBitmapFonts = new Dictionary();
 			
 			// définir la police du textField
-			this.fontName 	= fontName.toLowerCase();
+			this.fontName = fontName.toLowerCase();
 			
 			// définir les valeurs par défaut pour le textField
 			mSize 			= fontSize;
@@ -132,6 +139,8 @@ package starling.extensions.HTMLBitmapFonts
 			touchable = false;
 			
 			addEventListener( Event.FLATTEN, onFlatten );
+			addEventListener( Event.ADDED_TO_STAGE, _onStage );
+			addEventListener( Event.REMOVED_FROM_STAGE, _onRemove );
 		}
 		
 		/**
@@ -140,21 +149,88 @@ package starling.extensions.HTMLBitmapFonts
 		protected function set mRequiresRedraw(value:Boolean):void
 		{
 			_mRequiresRedraw 		= value;
-			if( value )				requiresRedrawQuadBatch = value;
-			if( mExportedQuad )		updateExportedQuad();
+		}
+		
+		/** addedToStage handler **/
+		protected function _onStage():void
+		{
+			// add touch event if text have links
+			if( mLinksRect && mLinksRect.length > 0 )	
+			{
+				touchable = true;
+				addEventListener( TouchEvent.TOUCH, _onTouch );
+			}
+			else	touchable = false;
+		}
+		
+		/** removedFromStage handler **/
+		protected function _onRemove():void
+		{
+			// remove touch events for links
+			touchable = false;
+			removeEventListener( TouchEvent.TOUCH, _onTouch );
+		}
+		
+		private var _hPoint		:Point 		= new Point();
+		private var _isOver		:Boolean 	= false;
+		private var _isDown		:Boolean 	= false;
+		private function _onTouch(e:TouchEvent):void
+		{
+			var touch:Touch = e.getTouch(this);
+			if( !touch )
+			{
+				Mouse.cursor = MouseCursor.AUTO;
+				_isOver = false;
+				_isDown = false;
+				return;
+			}
+			
+			touch.getLocation(this,_hPoint);
+			var idLink:int = mouseInLinkRect(_hPoint);
+			
+			if( idLink == -1 )
+			{
+				Mouse.cursor = MouseCursor.AUTO;
+				_isOver = false;
+				_isDown = false;
+				return;
+			}
+			
+			if( touch.phase == TouchPhase.HOVER )						// mouse over
+			{
+				Mouse.cursor = MouseCursor.BUTTON;
+				_isOver = true;
+			}
+			else if( touch.phase == TouchPhase.BEGAN && !_isDown )		// mouse down
+			{
+				Mouse.cursor = MouseCursor.BUTTON;
+				_isDown = true;
+				_isOver = true;
+			}
+			else if( touch.phase == TouchPhase.ENDED && _isDown )		// mouse up -> click
+			{
+				_isDown = false;
+				if( mLinks[idLink][0] == 'link' )	navigateToURL( new URLRequest(mLinks[idLink][1]), '_blank' );
+				else								dispatchEventWith( mLinks[idLink][1] );
+			}
+		}
+		
+		private function mouseInLinkRect(p:Point):int
+		{
+			var len:int = mLinksRect.length;
+			for( var i:int = 0; i<len; ++i )
+			{
+				if( mLinksRect[i].containsPoint(p) )	return i;
+			}
+			
+			return -1;
 		}
 		
 		/** dispose textures data. */
 		public override function dispose():void
 		{
-			removeEventListener(Event.FLATTEN, onFlatten);
-			
-			//mTextHTML = mText = '';
-			
 			// disposer le QuadBatch du texte
 			if( mQuadBatch )		mQuadBatch.dispose();
-			// disposer le QuadBatch exporté
-			if( mExportedQuad )		mExportedQuad.dispose();
 			
 			super.dispose();
 		}
@@ -212,9 +288,10 @@ package starling.extensions.HTMLBitmapFonts
 				colors 	= [mColor];
 			}
 			
+			var keepData:Object = mLinks && mLinks.length > 0 ? {} : null;
 			// on fait draw le texte en fonction des parametres
 			bitmapFont.lineSpacing = mLineSpacing;
-			bitmapFont.fillQuadBatch( mQuadBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, resizeField, null, autoCR );
+			bitmapFont.fillQuadBatch( mQuadBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, resizeField, keepData, autoCR );
 			
 			if( resizeField )
 			{
@@ -222,7 +299,37 @@ package starling.extensions.HTMLBitmapFonts
 				mHitArea.height = _baseHeight >= mQuadBatch.height ? _baseHeight : mQuadBatch.height;
 			}
 			
-			if( requiresRedrawQuadBatch && mExportedQuad )		this.updateExportedQuad();
+			if( mLinks && mLinks.length > 0 )
+			{
+				var charLoc:Vector.<CharLocation> = keepData.loc;
+				var len:int = mLinks.length;
+				mLinksRect = new Vector.<Rectangle>(len,true);
+				for( var i:int = 0; i<len; ++i )
+				{
+					mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x, 
+													charLoc[mLinks[i][2]].y, 
+													(charLoc[mLinks[i][3]].x+charLoc[mLinks[i][3]].char.width) - charLoc[mLinks[i][2]].x, 
+													(charLoc[mLinks[i][3]].y+charLoc[mLinks[i][3]].char.height) - charLoc[mLinks[i][2]].y );
+				}
+				
+				len = charLoc.length;
+				for( i = 0; i<len; ++i )	if( charLoc[i] )	HTMLBitmapFonts.returnCharLoc( charLoc[i] );
+				HTMLBitmapFonts.returnVCharLoc( charLoc );
+				keepData = null;
+				charLoc = null;
+				
+				// lancer le touch
+				if( stage )
+				{
+					touchable = true;
+					addEventListener( TouchEvent.TOUCH, _onTouch );
+				}
+			}
+			else if( touchable )	
+			{
+				touchable = false;
+				removeEventListener( TouchEvent.TOUCH, _onTouch );
+			}
 		}
 		
 		/** get the bounds of the text. */
@@ -293,9 +400,8 @@ package starling.extensions.HTMLBitmapFonts
 		{
 			if( mText == value )	return;
 			
-			mIsHTML 		= false;
-			mText 			= value;
-			mTextHTML 		= mText;
+			mIsHTML = false;
+			mTextHTML = mText = value;
 			mRequiresRedraw = true;
 		}
 		
@@ -307,8 +413,8 @@ package starling.extensions.HTMLBitmapFonts
 		{
 			if( mTextHTML == value )	return;
 			
-			mIsHTML 		= true;
-			mTextHTML 		= value;
+			mIsHTML = true;
+			mTextHTML = value;
 			
 			_parseTextHTML();
 			mRequiresRedraw = true;
@@ -331,13 +437,18 @@ package starling.extensions.HTMLBitmapFonts
 			mTextHTML = mTextHTML.split( String.fromCharCode(149) ).join( String.fromCharCode(8226) );
 			
 			// reset arrays
-			mSizes.length = 0;
-			mStyles.length = 0;
-			mColors.length = 0;
+			mSizes.length 	= 0;
+			mStyles.length 	= 0;
+			mColors.length 	= 0;
+			if( mLinks )	mLinks.length = 0;
 			
 			var sizeActu	:int 	= mSize;
 			var colorActu	:* 		= mColor; // color or gradient
 			var styleActu	:int 	= mStyle;
+			
+			var linkActu	:Array	= null;
+			var linkStart	:Boolean = false;
+			var linkEnd		:Boolean = false;
 			
 			var prevSizes	:Array = [mSize];
 			var prevColors	:Array = [mColor];
@@ -379,13 +490,13 @@ package starling.extensions.HTMLBitmapFonts
 									if( colors[0].charAt(0) == '#' )	colorActu = [uint( "0x" + colors[0].substr(1) ), uint( "0x" + colors[0].substr(1) ), uint( "0x" + colors[1].substr(1) ), uint( "0x" + colors[1].substr(1) )];
 									else								colorActu = [uint( colors[0] ), uint( colors[0] ), uint( colors[1] ), uint( colors[1] )];
 								}
-									// dégradé custom
+								// dégradé custom
 								else if( colors.length == 4 )
 								{
 									if( colors[0].charAt(0) == '#' )	colorActu = [uint( "0x" + colors[0].substr(1) ), uint( "0x" + colors[1].substr(1) ), uint( "0x" + colors[2].substr(1) ), uint( "0x" + colors[3].substr(1) )];
 									else								colorActu = [uint( colors[0] ), uint( colors[1] ), uint( colors[2] ), uint( colors[3] )];
 								}
-									// dégradé invalide -> couleur unie
+								// dégradé invalide -> couleur unie
 								else
 								{
 									colorStr = colors[0];
@@ -393,7 +504,7 @@ package starling.extensions.HTMLBitmapFonts
 									else							colorActu = uint( colorStr );
 								}
 							}
-								// couleur unie
+							// couleur unie
 							else
 							{
 								if( colorStr.charAt(0) == '#' )	colorActu = uint( "0x" + colorStr.substr(1) );
@@ -407,6 +518,14 @@ package starling.extensions.HTMLBitmapFonts
 							sizeActu = int( sizeStr );
 							
 							prevSizes.push( sizeActu );
+							break;
+						case 'l':
+							linkActu = [ 'link', mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ) ];
+							linkStart = true;
+							break;
+						case 'f':
+							linkActu = [ 'func', mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ) ];
+							linkStart = true;
 							break;
 						case '/':
 							switch( mTextHTML.charAt( i+2 ).toLowerCase() )
@@ -424,6 +543,10 @@ package starling.extensions.HTMLBitmapFonts
 								case 's':
 									if( prevSizes.length > 1 )	prevSizes.pop();
 									sizeActu = prevSizes[prevSizes.length-1];
+									break;
+								case 'l':
+								case 'f':
+									linkEnd = true;
 									break;
 							}
 							break;
@@ -451,6 +574,49 @@ package starling.extensions.HTMLBitmapFonts
 					mSizes.push( sizeActu );
 					// on ajoute le style actuel
 					mStyles.push( styleActu );
+					
+					if( linkActu )
+					{
+						if( linkStart )	
+						{
+							linkActu.push( mColors.length-1 );
+							linkStart = false;
+						}
+						if( linkEnd )	
+						{
+							linkActu.push( mColors.length-1 );
+							linkEnd = false;
+							
+							if( !mLinks )	mLinks = [];
+							mLinks.push( linkActu );
+							
+							//mColors[linkActu[2]] = 0xFF0000;
+							//mColors[linkActu[3]] = 0xFF0000;
+							
+							linkActu = null;
+						}
+					}
+				}
+			}
+			if( linkActu )
+			{
+				if( linkStart )	
+				{
+					linkActu.push( mColors.length-1 );
+					linkStart = false;
+				}
+				if( linkEnd )	
+				{
+					linkActu.push( mColors.length-1 );
+					linkEnd = false;
+					
+					if( !mLinks )	mLinks = [];
+					mLinks.push( linkActu );
+					
+					//mColors[linkActu[2]] = 0xFF0000;
+					//mColors[linkActu[3]] = 0xFF0000;
+					
+					linkActu = null;
 				}
 			}
 		}
@@ -507,20 +673,20 @@ package starling.extensions.HTMLBitmapFonts
 							if( value[0] is String && value[0].charAt(0) == '#' )	mColor = [uint( "0x" + value[0].substr(1) ), uint( "0x" + value[0].substr(1) ), uint( "0x" + value[1].substr(1) ), uint( "0x" + value[1].substr(1) )];
 							else													mColor = [uint( value[0] ), uint( value[0] ), uint( value[1] ), uint( value[1] )];
 						}
-							// dégradé custom
+						// dégradé custom
 						else if( value.length == 4 )
 						{
 							if( value[0] is String && value[0].charAt(0) == '#' )	mColor = [uint( "0x" + value[0].substr(1) ), uint( "0x" + value[1].substr(1) ), uint( "0x" + value[2].substr(1) ), uint( "0x" + value[3].substr(1) )];
 							else													mColor = [uint( value[0] ), uint( value[1] ), uint( value[2] ), uint( value[3] )];
 						}
-							// dégradé invalide -> couleur unie
+						// dégradé invalide -> couleur unie
 						else
 						{
 							if( value[0] is String && value[0].charAt(0) == '#' )	mColor = uint( "0x" + value[0].substr(1) );
 							else													mColor = uint( value[0] );
 						}
 					}
-						// couleur unie
+					// couleur unie
 					else
 					{
 						if( value[0] is String && value[0].charAt(0) == '#' )		mColor = uint( "0x" + value[0].substr(1) );
@@ -634,7 +800,7 @@ package starling.extensions.HTMLBitmapFonts
 			}
 		}
 		
-		/** changer l'espacement entre les lignes **/
+		/** change the line spacing **/
 		public function get lineSpacing():int { return mLineSpacing; }
 		public function set lineSpacing( value:int ):void
 		{
@@ -685,63 +851,13 @@ package starling.extensions.HTMLBitmapFonts
 			return htmlBitmapFonts[name];
 		}
 		
-		protected var requiresRedrawQuadBatch:Boolean = false;
-		
-		/** recuperer le quad batch du champ texte si la font est un BitmapFont **/
-		public function get quadBatch():QuadBatch
-		{
-			if( !mExportedQuad )			
-			{
-				mExportedQuad = new QuadBatch();
-				mExportedQuad.touchable = false;
-				mExportedQuad.batchable = true;
-			}
-			if( requiresRedrawQuadBatch )	updateExportedQuad();
-			return mExportedQuad;
-		}
-		
-		protected function updateExportedQuad():void
-		{
-			requiresRedrawQuadBatch = false;
-			
-			var bitmapFont:HTMLBitmapFonts = htmlBitmapFonts[mFontName.toLowerCase()];
-			if (bitmapFont == null) throw new Error("Bitmap font not registered: " + mFontName);
-			
-			mExportedQuad.x 		= this.x;
-			mExportedQuad.y 		= this.y;
-			mExportedQuad.scaleX 	= this.scaleX;
-			mExportedQuad.scaleY 	= this.scaleY;
-			mExportedQuad.pivotX 	= this.pivotX;
-			mExportedQuad.pivotY 	= this.pivotY;
-			
-			mExportedQuad.reset();
-			// si html text on applique les tableaux de taille style et couleurs
-			var sizes	:Array = mSizes && mSizes.length > 0 	? mSizes 	: [mSize];
-			var styles	:Array = mStyles && mStyles.length > 0 	? mStyles 	: [mStyle];
-			var colors	:Array = mColors && mColors.length > 0 	? mColors 	: [mColor];
-			
-			// sinon on met les valeurs de base
-			if( !mIsHTML )
-			{
-				sizes 	= [mSize];
-				styles 	= [mStyle];
-				colors 	= [mColor];
-			}
-			
-			// générer le texte
-			bitmapFont.lineSpacing = mLineSpacing;
-			bitmapFont.fillQuadBatch( mExportedQuad, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, resizeField, null, autoCR );
-			
-			if( mExportedQuad.hasEventListener('update') )	mExportedQuad.dispatchEventWith( 'update' );
-		}
-		
 		/** 
-		 * Appliquer le TextField à un Quadbatch, le quad batch sera rempli avec les memes données que le textField
-		 * @param quadBatch le QuadBatch à remplir
-		 * @param applySize si true on appliquera les tailles du textField au quadBatch
-		 * @param applyPos si true on appliquera les positions du textField au quadBatch
-		 * @param applyScale si true on appliquara les scales du textField au quadBatch
-		 * @param applyPivot si true, on appliquera les pivots du textField au quadBatch
+		 * Draws text into a QuadBatch
+		 * @param quadBatch the QuadBatch to fill
+		 * @param applySize if true, apply width and height of the TextField to the Quadbatch
+		 * @param applyPos if true, apply TextField positions to the QuadBatch
+		 * @param applyScale if true, apply the scale of the TextField on the QuadBatch
+		 * @param applyPivot if true, apply the pivot of the TextField on the QuadBatch
 		 **/
 		public function fillQuadBatch( quadBatch:QuadBatch, applySize:Boolean = false, applyPos:Boolean = false, applyScale:Boolean = false, applyPivot:Boolean = false ):void
 		{
@@ -810,16 +926,10 @@ package starling.extensions.HTMLBitmapFonts
 		override public function set x(value:Number):void
 		{
 			super.x = int(value);
-			//mRequiresRedraw = true;
-			requiresRedrawQuadBatch = true;
-			if( mExportedQuad )	updateExportedQuad();
 		}
 		override public function set y(value:Number):void
 		{
 			super.y = int(value);
-			//mRequiresRedraw = true;
-			requiresRedrawQuadBatch = true;
-			if( mExportedQuad )	updateExportedQuad();
 		}
 		
 		public function get xx():Number{ return super.x };
@@ -834,4 +944,3 @@ package starling.extensions.HTMLBitmapFonts
 		}
 	}
 }
-

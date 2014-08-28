@@ -18,18 +18,18 @@ package starling.extensions.HTMLBitmapFonts
 	 *
 	 * <listing>
 	 &lt;font&gt;
-	 &lt;info face="BranchingMouse" size="40" /&gt;
-	 &lt;common lineHeight="40" /&gt;
-	 &lt;pages&gt; &lt;!-- currently, only one page is supported --&gt;
-	 &lt;page id="0" file="texture.png" /&gt;
-	 &lt;/pages&gt;
-	 &lt;chars&gt;
-	 &lt;char id="32" x="60" y="29" width="1" height="1" xoffset="0" yoffset="27" xadvance="8" /&gt;
-	 &lt;char id="33" x="155" y="144" width="9" height="21" xoffset="0" yoffset="6" xadvance="9" /&gt;
-	 &lt;/chars&gt;
-	 &lt;kernings&gt; &lt;!-- Kerning is optional --&gt;
-	 &lt;kerning first="83" second="83" amount="-4"/&gt;
-	 &lt;/kernings&gt;
+		 &lt;info face="BranchingMouse" size="40" /&gt;
+		 &lt;common lineHeight="40" /&gt;
+		 &lt;pages&gt; &lt;!-- currently, only one page is supported --&gt;
+			 &lt;page id="0" file="texture.png" /&gt;
+		 &lt;/pages&gt;
+		 &lt;chars&gt;
+			 &lt;char id="32" x="60" y="29" width="1" height="1" xoffset="0" yoffset="27" xadvance="8" /&gt;
+		 	&lt;char id="33" x="155" y="144" width="9" height="21" xoffset="0" yoffset="6" xadvance="9" /&gt;
+		 &lt;/chars&gt;
+		 &lt;kernings&gt; &lt;!-- Kerning is optional --&gt;
+		 	&lt;kerning first="83" second="83" amount="-4"/&gt;
+		 &lt;/kernings&gt;
 	 &lt;/font&gt;
 	 * </listing>
 	 * 
@@ -39,18 +39,18 @@ package starling.extensions.HTMLBitmapFonts
 	 * 
 	 else if( rootNode == "font" )
 	 {
-	 name 	= xml.info.&#64;face.toString();
-	 fileName 	= getName(xml.pages.page.&#64;file.toString());
-	 isBold 	= xml.info.&#64;bold == 1;
-	 isItalic 	= xml.info.&#64;italic == 1;
-	 
-	 log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
-	 
-	 fontTexture = getTexture( fileName );
-	 HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.&#64;size, isBold, isItalic, name.toLowerCase() );
-	 removeTexture( fileName, false );
-	 
-	 mLoadedHTMLFonts.push( name.toLowerCase() );
+		 name 	= xml.info.&#64;face.toString();
+		 fileName 	= getName(xml.pages.page.&#64;file.toString());
+		 isBold 	= xml.info.&#64;bold == 1;
+		 isItalic 	= xml.info.&#64;italic == 1;
+		 
+		 log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
+		 
+		 fontTexture = getTexture( fileName );
+		 HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.&#64;size, isBold, isItalic, name.toLowerCase() );
+		 removeTexture( fileName, false );
+		 
+		 mLoadedHTMLFonts.push( name.toLowerCase() );
 	 }
 	 * </listing>
 	 */ 
@@ -65,12 +65,21 @@ package starling.extensions.HTMLBitmapFonts
 		{
 			if( !_emotesTxt )
 			{
-				_emotesTxt = new Vector.<String>();
+				_emotesTxt 		= new Vector.<String>();
 				_emotesTextures = new Vector.<BitmapChar>();
 			}
 			
-			_emotesTxt.push( txt );
-			_emotesTextures.push( new BitmapChar(int.MAX_VALUE, texture, 5, 0, texture.width+10) );
+			var id:int = _emotesTxt.indexOf(txt);
+			if( id == -1 )
+			{
+				_emotesTxt.push( txt );
+				_emotesTextures.push( new BitmapChar(int.MAX_VALUE, texture, 5, 0, texture.width+10) );
+			}
+			else
+			{
+				_emotesTxt[id] = txt;
+				_emotesTextures[id] = new BitmapChar(int.MAX_VALUE, texture, 5, 0, texture.width+10);
+			}
 		}
 		
 		/** space char **/
@@ -119,6 +128,7 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		public static function returnCharLoc( value:CharLocation ):void
 		{
+			if( !value )	return;
 			value.reset();
 			mCharLocationPool.push( value );
 		}
@@ -127,7 +137,7 @@ package starling.extensions.HTMLBitmapFonts
 		private static var mCharLocationVPool		:Vector.< Vector.<CharLocation> >;
 		public static function getVCharLoc():Vector.<CharLocation>
 		{
-			if( mCharLocationVPool.length > 0 )	return mCharLocationVPool.pop();
+			if( mCharLocationVPool.length > 0 )		return mCharLocationVPool.pop();
 			return new <CharLocation>[];
 		}
 		public static function returnVCharLoc( value:Vector.<CharLocation> ):void
@@ -199,7 +209,7 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// créer le BitmapFontStyle pour le style si il n'existe pas encore
 			if( !mFontStyles[index] )	mFontStyles[index] = new BitmapFontStyle( index, textures, fontsXml, sizes );
-				// ajouter les tailles de font au BitmapFontStyle
+			// ajouter les tailles de font au BitmapFontStyle
 			else						mFontStyles[index].addMultipleSizes( textures, fontsXml, sizes );
 			
 			// si le helperImage n'existe pas encore on le crée
@@ -228,7 +238,7 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// créer le BitmapFontStyle pour le style si il n'existe pas encore
 			if( !mFontStyles[index] )	mFontStyles[index] = new BitmapFontStyle( index, new <Texture>[texture], new <XML>[xml], new <Number>[size] );
-				// ajouter la taille de font au BitmapFontStyle
+			// ajouter la taille de font au BitmapFontStyle
 			else						mFontStyles[index].add( texture, xml, size );
 			
 			// si le helperImage n'existe pas encore on le crée
@@ -348,8 +358,6 @@ package starling.extensions.HTMLBitmapFonts
 					mHelperImage.color = 0xFFFFFF;
 				}
 				
-				
-				
 				// récupérer le CharLocation du caractère actuel
 				var charLocation:CharLocation = charLocations[i];
 				// appliquer la texture du caractere à l'image
@@ -364,12 +372,15 @@ package starling.extensions.HTMLBitmapFonts
 				// ajouter l'image au QuadBatch
 				quadBatch.addImage( mHelperImage );
 				
-				// on retourne le charLocation dans la poule
-				returnCharLoc( charLocations[i] );
-				charLocations[i] = null;
+				if( !keepDatas )
+				{
+					// on retourne le charLocation dans la poule
+					returnCharLoc( charLocations[i] );
+					charLocations[i] = null;
+				}
 			}
 			
-			returnVCharLoc( charLocations );
+			if( !keepDatas )	returnVCharLoc( charLocations );
 		}
 		
 		/** Arranges the characters of a text inside a rectangle, adhering to the given settings. 
@@ -517,7 +528,7 @@ package starling.extensions.HTMLBitmapFonts
 							// new line
 							//if( charID == CHAR_NEWLINE || charID == CHAR_CARRIAGE_RETURN )	lineFull = true;
 							// fin de ligne car dépassement de la largeur du conteneur
-							if( !resizeQuad && charLocation.x + char.width > containerWidth )
+							if( (!resizeQuad || autoCR) && charLocation.x + char.width > containerWidth )
 							{
 								// si autoscale est a true on ne doit pas couper le mot en 2
 								if( !autoCR || (autoScale && lastWhiteSpace == -1) )		break;
@@ -568,7 +579,7 @@ package starling.extensions.HTMLBitmapFonts
 							//currentMaxSize = 0;
 							finished = true;
 						}
-							// fin de ligne
+						// fin de ligne
 						else if( lineFull )
 						{
 							currentLine.push(null);
@@ -637,7 +648,7 @@ package starling.extensions.HTMLBitmapFonts
 			} // while (!finished)
 			
 			// le tableau de positionnement final des caractères
-			var finalLocations	:Vector.<CharLocation> 	= getVCharLoc();//new <CharLocation>[];
+ 			var finalLocations	:Vector.<CharLocation> 	= getVCharLoc();//new <CharLocation>[];
 			// le nombre de lignes
 			var numLines		:int 					= lines.length;
 			// le y max du texte
@@ -742,7 +753,7 @@ package starling.extensions.HTMLBitmapFonts
 			return finalLocations;
 		}
 		
-		/** retourne un tableau avec les nouvelle taille a appliquer en fonction du scale général de l'application **/
+		/** retourne un tableau avec les nouvelles tailles à appliquer en fonction du scale général de l'application **/
 		[Inline]
 		private final function _getSizeForActualScale( sizes:Array, styles:Array ):Array
 		{

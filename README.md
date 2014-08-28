@@ -26,7 +26,8 @@ ACCEPTED TAGS:
  * **gradient up-left/up-right/down-left/down-right** : <br/>
  `<color="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></color>` or <br/>
  `<c="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></c>`
-
+* **links** : `<l="your-url.com"></l>`;
+* **dispatch Event** : `<f="string var to dispatch"></f>`;
 
 <i>HTMLTextField uses HTMLBitmapFonts instead of the tradtional BitmapFont.</i>
 
