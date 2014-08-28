@@ -533,6 +533,9 @@ package starling.extensions.HTMLBitmapFonts
 								// si autoscale est a true on ne doit pas couper le mot en 2
 								if( !autoCR || (autoScale && lastWhiteSpace == -1) )		break;
 								
+								// si c'est un emote on retourne au debut de l'emote avant de couper
+								if( isEmote )	i -= _emotesTxt[e].length-1;
+								
 								// si on a eu un espace on va couper apres le dernier espace sinon on coupe à lindex actuel
 								var numCharsToRemove	:int = lastWhiteSpace == -1 ? 1 : i - lastWhiteSpace + 1;
 								var removeIndex			:int = currentLine.length - numCharsToRemove;
