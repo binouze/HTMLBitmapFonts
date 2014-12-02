@@ -1,6 +1,4 @@
-Starling extension for using bitmap fonts with simplified html tags for styling texts
-
-_sorry all asdoc and comments are in french, i will change it soon_ 
+Starling extension for using bitmap fonts with simplified HTML tags for styling texts
 ___
 
 HTMLTextField
@@ -8,6 +6,7 @@ HTMLTextField
 
 <code>HTMLTextField</code> is a Starling TextField for using with <il>simplified html notation</il> (just for styling: no links, no images...).
 
+<em>**HTMLTextField now supports font scaling to adapt font size, it will choose the nearest biggest font size you have registered.**</em>
 
 ACCEPTED TAGS:
 --------------
@@ -15,6 +14,7 @@ ACCEPTED TAGS:
 
 * **bold** : `<b></b>`;
 * **italic** : `<i></i>`;
+* **underlined** : `<u></u>`; <br/><em> you have to provide the underline texture with: <code>HTMLBitmapFonts.underlineTexture = yourTexture</code></em> for this to work.
 * **size**   : `<size="10"></size>` or `<s="10"></s>`;
 * **colors** : _don't forget '0x' or '#' !_
  * **solid** : <br/>
@@ -26,8 +26,8 @@ ACCEPTED TAGS:
  * **gradient up-left/up-right/down-left/down-right** : <br/>
  `<color="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></color>` or <br/>
  `<c="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></c>`
-* **links** : `<l="your-url.com"></l>`;
-* **dispatch Event** : `<f="string var to dispatch"></f>`;
+* **links** : `<l="your-url.com">text to click</l>`; <br/><em>you can use <code>defaultLinkColor</code> var to auto colorize the links.</em>
+* **dispatch Event** : `<f="string var to dispatch">text to click</f>`; <br/><em>you can use <code>defaultLinkColor</code> var to auto colorize the links.</em>
 
 <i>HTMLTextField uses HTMLBitmapFonts instead of the tradtional BitmapFont.</i>
 
@@ -64,6 +64,21 @@ in loadQueue -> processXML :</br>
 
 ___
 	
+Other things:
+-------------------------
+
+* You can add emotes to the text, just register the emotes shortcut and the texture associated.<br/>
+<code>HTMLTextField.registerEmote( ":)", mySmyleyTexture );</code>
+* You can prevent auto carriage return by setting the <code>autoCR</code> var to <code>false</code>
+* You can autorize the text to extend automaticaly if the text not fit by setting the <code>resizeField</code> var to <code>true</code>
+* You can change the line spacing of the text by setting the <code>lineSpacing</code> var to something other than 0.
+* Added left centered and right centered horizontal alignements rules, use <code>HTMLTextField.LEFT_CENTERED</code> and <code>HTMLTextField.RIGHT_CENTERED</code>.
+* You can easily make shadows on the text by setting <code>shadowX</code>, <code>shadowY</code> and <code>shadowColor</code> vars.
+___
+
+Warnings:
+-------------
 * <em>Only **one font name** can be used in the HTMLTextField, it can only change size, bold, italic, and color</em>
-* <em>All font styles must be on the **same atlas** as the textField is drawed on a QuadBatch</em>
-* <em>No scales are applied on the texts, when adapting the font size it just search within the available sizes</em>
+* <em>All font styles must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
+* <em>All emotes registered must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
+* <em>The underline texture must be on the **same atlas** as the textField is drawn on a QuadBatch</em>

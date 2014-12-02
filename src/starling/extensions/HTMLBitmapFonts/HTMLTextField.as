@@ -17,6 +17,7 @@ package starling.extensions.HTMLBitmapFonts
 	import starling.events.Touch;
 	import starling.events.TouchEvent;
 	import starling.events.TouchPhase;
+	import starling.text.BitmapChar;
 	import starling.textures.Texture;
 	import starling.utils.HAlign;
 	import starling.utils.RectangleUtil;
@@ -35,93 +36,155 @@ package starling.extensions.HTMLBitmapFonts
 		/** available fonts **/
 		public static var htmlBitmapFonts		:Dictionary;
 		
+		/** default blue color **/
+		public static const DEFAULT_LINK_BLUE	:uint = 0x303DF0;
+		/** define the default links color, null for no change (default null)**/
+		public var defaultLinkColor				:* = null;
+		
+		/** the function to call to navigate to url (default flash.net.navigateToURL) **/
+		public var navigateToURLFunction		:Function 			= HTMLTextField._navigateToURL;
+		/** the urlRequest used by navigate to url function **/
+		private static var _urlRequest			:URLRequest = new URLRequest();
+		/** default navigate to urlFunction **/
+		private static function _navigateToURL( url:String ):void
+		{
+			_urlRequest.url = url;
+			navigateToURL( _urlRequest );
+		}
+		
 		/** Helper objects. */
-		protected static var sHelperMatrix		:Matrix = new Matrix();
+		protected static var sHelperMatrix		:Matrix 			= new Matrix();
+		protected static var sHelperRect		:Rectangle			= new Rectangle();
 		
 		/** true when a redraw is needed **/
-		protected var _mRequiresRedraw	:Boolean;
+		protected var _mRequiresRedraw			:Boolean;
 		
 		//-- variables pour le texte standard --//
 		
 		/** the size of the text **/
-		protected var mSize				:Number;
+		protected var mSize						:Number;
 		/** the color of the text **/
-		protected var mColor			:*;
+		protected var mColor					:*;
 		/** the style of the text **/
-		protected var mStyle			:uint;
+		protected var mStyle					:uint;
+		/** true for underlining the text **/
+		protected var mUnderline				:Boolean;
 		/** the text (without html formatting) **/
-		protected var mText				:String;
+		protected var mText						:String;
 		/** the font name **/
-		protected var mFontName			:String;
+		protected var mFontName					:String;
 		/** the halign rule **/
-		protected var mHAlign			:String;
+		protected var mHAlign					:String;
 		/** the vAlign rule **/
-		protected var mVAlign			:String;
-		/** bold **/
-		protected var mBold				:Boolean;
+		protected var mVAlign					:String;
+		/** bold **/		
+		protected var mBold						:Boolean;
 		/** italic **/
-		protected var mItalic			:Boolean;
+		protected var mItalic					:Boolean;
 		/** if true the text will be resized to fit in the width / height area (use only font size added the the BitmapFontStyle) **/
-		protected var mAutoScale		:Boolean;
+		protected var mAutoScale				:Boolean;
 		/** use kerning **/
-		protected var mKerning			:Boolean;
+		protected var mKerning					:Boolean;
+		/** when true, the text will automaticaly go to the next line if it not fit in the width **/
+		protected var mAutoCR					:Boolean = true;
+		/** pass it to true if you want to hide the emotes but keep their place **/
+		protected var mHideEmotes				:Boolean = false;
+		
+		//-- auto resize --//
+		
+		/** if true, the size will be enlarged to contain the text **/
+		protected var mResizeField				:Boolean = false;
+		/** the maximum width when resizeField is set to true **/
+		protected var mMaxWidth					:int = 900;
+		/** used when mResizeField is true to keep the base size **/
+		protected var _baseWidth				:int;
+		/** used when mResizeField is true to keep the base size **/
+		protected var _baseHeight				:int;
+		
+		//-- Shadow --//
+		
+		/** horizontal shadow offset (0 = no shadow)**/
+		protected var mShadowX					:int = 0;
+		/** vertical shadow offset (0 = no shadow)**/
+		protected var mShadowY					:int = 0;
+		/** shadow color (default 0x222222) **/
+		protected var mShadowColor				:uint = 0x222222;
 		
 		//-- variables utiles pour le texte html --//
 		
 		/** true if text is HTML text **/
-		protected var mIsHTML			:Boolean;
+		protected var mIsHTML					:Boolean;
 		/** the html text **/
-		protected var mTextHTML			:String;
+		protected var mTextHTML					:String;
 		/** the sizes list **/
-		protected var mSizes			:Array = [];
+		protected var mSizes					:Array = [];
 		/** the styles list **/
-		protected var mStyles			:Array = [];
+		protected var mStyles					:Array = [];
 		/** the color list **/
-		protected var mColors			:Array = [];
+		protected var mColors					:Array = [];
+		/** the underlines list **/
+		protected var mUnderlines				:Array = [];
 		/** the links list **/
-		protected var mLinks			:Array;
+		protected var mLinks					:Array;
 		/** les rectangles de touch pour les lnks **/
-		protected var mLinksRect		:Vector.<Rectangle>;
+		protected var mLinksRect				:Vector.<Rectangle>;
 		/** the line spacing **/
-		protected var mLineSpacing		:int = 0;
+		protected var mLineSpacing				:int = 0;
 		
 		/** text bounds **/
-		protected var mTextBounds		:Rectangle;
+		protected var mTextBounds				:Rectangle;
 		/** hit area **/
-		protected var mHitArea			:Rectangle;
+		protected var mHitArea					:Rectangle;
 		
 		/** the quadBatch **/
-		protected var mQuadBatch		:QuadBatch;
+		protected var mQuadBatch				:QuadBatch;
+		protected var mQuadBatchS				:QuadBatch;
 		
-		/** if true, the size will be enlarged to contain the text **/
-		public var resizeField			:Boolean = false;
-		protected var _baseWidth		:int;
-		protected var _baseHeight		:int;
 		
-		/** retour a la ligne auto si le texte ne rentre pas dans la largeur **/
-		public var autoCR				:Boolean = true;
-		
-		/** Create a new text field with the given properties. */
-		public function HTMLTextField( width:int, height:int, text:* = '', fontName:String='verdana', fontSize:int = 16, color:uint = 0xFFFFFF, bold:Boolean = false, italic:Boolean = false, isHtml:Boolean = true, resizeField:Boolean = false )
+		/** 
+		 * Create a new text field with the given properties. 
+		 * width the desired max width of the text field
+		 * height the desired max height of the text field
+		 * text the text to fill the field with
+		 * fontName the font to use
+		 * fontSize the base size for the text
+		 * color the base color for the text, uint for solid color or array for gradients (see color setter)
+		 * bold 
+		 * italic
+		 * isHtml if true, the text will be parsed as simplified HTML
+		 * resizeField if true the text will have his width/height ajusted to the text size even if bigger than width/height value (see maxWidth).
+		 **/
+		public function HTMLTextField( width:int, height:int, text:String = '', fontName:String='verdana', fontSize:int = 16, color:* = 0xFFFFFF, bold:Boolean = false, italic:Boolean = false, isHtml:Boolean = true, resizeField:Boolean = false )
 		{
 			// creer le dico des bitmapFont si il n'est pas déja créé
 			if( !htmlBitmapFonts ) 	htmlBitmapFonts = new Dictionary();
 			
+			// if the font name is empty take the first font name available
+			if( fontName == '' ) 
+			{
+				// get the first fontName available
+				var firstKey:String;
+				for( firstKey in htmlBitmapFonts )
+				{
+					fontName = firstKey;
+					break;
+				}
+			}
 			// définir la police du textField
 			this.fontName = fontName.toLowerCase();
 			
 			// définir les valeurs par défaut pour le textField
-			mSize 			= fontSize;
-			mColor 			= color;
-			mHAlign 		= HAlign.CENTER;
-			mVAlign 		= VAlign.CENTER;
-			mKerning 		= true;
-			mBold 			= bold;
-			mItalic			= italic;
-			mIsHTML			= isHtml;
-			this.resizeField = resizeField;
-			_baseWidth		= width>0?width:1;
-			_baseHeight		= height>0?height:1;
+			mSize 				= fontSize;
+			mColor 				= color;
+			mHAlign 			= HAlign.CENTER;
+			mVAlign 			= VAlign.CENTER;
+			mKerning 			= true;
+			mBold 				= bold;
+			mItalic				= italic;
+			mIsHTML				= isHtml;
+			mResizeField 		= resizeField;
+			_baseWidth			= width>0?width:1;
+			_baseHeight			= height>0?height:1;
 			
 			// définir le style de base pour le textfield
 			mStyle = BitmapFontStyle.REGULAR;
@@ -136,11 +199,23 @@ package starling.extensions.HTMLBitmapFonts
 			if( !isHtml )	this.text 		= text ? text : "";
 			else			this.htmlText 	= text ? text : "";
 			
-			touchable = false;
+			_touchable = false;
 			
 			addEventListener( Event.FLATTEN, onFlatten );
 			addEventListener( Event.ADDED_TO_STAGE, _onStage );
 			addEventListener( Event.REMOVED_FROM_STAGE, _onRemove );
+		}
+		
+		private var _userDefinedTouchable:Boolean = false;
+		override public function set touchable(value:Boolean):void
+		{
+			_userDefinedTouchable = true;
+			super.touchable = value;
+		}
+		private function set _touchable(value:Boolean):void
+		{
+			if( _userDefinedTouchable )	return;
+			super.touchable = value;
 		}
 		
 		/**
@@ -150,30 +225,34 @@ package starling.extensions.HTMLBitmapFonts
 		{
 			_mRequiresRedraw 		= value;
 		}
-		
-		/** addedToStage handler **/
+
+		/** action to do when the textfield is added to stage **/
 		protected function _onStage():void
 		{
-			// add touch event if text have links
+			// if there is links into the texts, add touch listener
 			if( mLinksRect && mLinksRect.length > 0 )	
 			{
-				touchable = true;
+				_touchable = true;
 				addEventListener( TouchEvent.TOUCH, _onTouch );
 			}
-			else	touchable = false;
+			else	_touchable = false;
 		}
 		
-		/** removedFromStage handler **/
+		/** actions to do when the textfield is removed from stage **/
 		protected function _onRemove():void
 		{
-			// remove touch events for links
-			touchable = false;
+			// remove touch listener
+			_touchable = false;
 			removeEventListener( TouchEvent.TOUCH, _onTouch );
 		}
 		
-		private var _hPoint		:Point 		= new Point();
+		/** a static helper point used for the link touch detection **/
+		private static var _hPoint		:Point 		= new Point();
+		/** true when the mouse is over a link **/
 		private var _isOver		:Boolean 	= false;
+		/** true when the mouse is down on a link **/
 		private var _isDown		:Boolean 	= false;
+		/** touch process to detect links clicks **/
 		private function _onTouch(e:TouchEvent):void
 		{
 			var touch:Touch = e.getTouch(this);
@@ -210,12 +289,13 @@ package starling.extensions.HTMLBitmapFonts
 			else if( touch.phase == TouchPhase.ENDED && _isDown )		// mouse up -> click
 			{
 				_isDown = false;
-				if( mLinks[idLink][0] == 'link' )	navigateToURL( new URLRequest(mLinks[idLink][1]), '_blank' );
+				if( mLinks[idLink][0] == 'link' )	navigateToURLFunction( mLinks[idLink][1] );
 				else								dispatchEventWith( mLinks[idLink][1] );
 			}
 		}
 		
-		private function mouseInLinkRect(p:Point):int
+		[Inline]
+		private final function mouseInLinkRect(p:Point):int
 		{
 			var len:int = mLinksRect.length;
 			for( var i:int = 0; i<len; ++i )
@@ -231,7 +311,7 @@ package starling.extensions.HTMLBitmapFonts
 		{
 			// disposer le QuadBatch du texte
 			if( mQuadBatch )		mQuadBatch.dispose();
-			
+			if( mQuadBatchS )		mQuadBatchS.dispose();
 			super.dispose();
 		}
 		
@@ -276,9 +356,10 @@ package starling.extensions.HTMLBitmapFonts
 			}
 			
 			// si html text on applique les tableaux de taille style et couleurs
-			var sizes	:Array = mSizes && mSizes.length > 0 	? mSizes 	: [mSize];
-			var styles	:Array = mStyles && mStyles.length > 0 	? mStyles 	: [mStyle];
-			var colors	:Array = mColors && mColors.length > 0 	? mColors 	: [mColor];
+			var sizes		:Array = mSizes && mSizes.length > 0 			? mSizes 		: [mSize];
+			var styles		:Array = mStyles && mStyles.length > 0 			? mStyles 		: [mStyle];
+			var colors		:Array = mColors && mColors.length > 0 			? mColors 		: [mColor];
+			var underlines	:Array = mUnderlines && mUnderlines.length > 0 	? mUnderlines 	: [mUnderline];
 			
 			// sinon on met les valeurs de base
 			if( !mIsHTML )
@@ -291,45 +372,131 @@ package starling.extensions.HTMLBitmapFonts
 			var keepData:Object = mLinks && mLinks.length > 0 ? {} : null;
 			// on fait draw le texte en fonction des parametres
 			bitmapFont.lineSpacing = mLineSpacing;
-			bitmapFont.fillQuadBatch( mQuadBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, resizeField, keepData, autoCR );
+			bitmapFont.fillQuadBatch( mQuadBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, underlines, mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, keepData, mAutoCR, mMaxWidth, mHideEmotes );
 			
-			if( resizeField )
+			if( mShadowX != 0 || mShadowY != 0 )
+			{
+				if( mQuadBatchS == null ) 
+				{ 
+					mQuadBatchS = new QuadBatch(); 
+					mQuadBatchS.touchable = false;
+					mQuadBatchS.batchable = true;
+					addChildAt( mQuadBatchS, 0 ); 
+				}
+				else
+					mQuadBatchS.reset();
+				
+				bitmapFont.fillQuadBatch( mQuadBatchS, mHitArea.width, mHitArea.height, mText, sizes, styles, [mShadowColor], [false], mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, false, mAutoCR, mMaxWidth, true );
+				mQuadBatchS.x = mShadowX;
+				mQuadBatchS.y = mShadowY;
+			}
+			else if( mQuadBatchS )
+			{
+				mQuadBatchS.removeFromParent(true);
+				mQuadBatchS = null;
+			}
+			
+			
+			if( mResizeField )
 			{
 				mHitArea.width 	= _baseWidth >= mQuadBatch.width ? _baseWidth : mQuadBatch.width;
 				mHitArea.height = _baseHeight >= mQuadBatch.height ? _baseHeight : mQuadBatch.height;
 			}
 			
+			// apply vAlign
+			mQuadBatch.getBounds(mQuadBatch, sHelperRect);
+			var yOffset:int = 0;
+			
+			if( vAlign == VAlign.TOP )      	yOffset 	= -sHelperRect.y;
+			else if( vAlign == VAlign.BOTTOM )  yOffset 	= -sHelperRect.y + (height-sHelperRect.height);
+			else if( vAlign == VAlign.CENTER ) 	yOffset 	= -sHelperRect.y + (height-sHelperRect.height)/2;
+			if( yOffset < 0 )					yOffset 	= 0;
+			
+			mQuadBatch.y = yOffset;
+			if( mQuadBatchS )	
+				mQuadBatchS.y 	= yOffset + shadowY;
+			
 			if( mLinks && mLinks.length > 0 )
 			{
 				var charLoc:Vector.<CharLocation> = keepData.loc;
+				var charLen:int = charLoc.length-1;
+				if( charLen < 0 )	charLen = 0;
 				var len:int = mLinks.length;
-				mLinksRect = new Vector.<Rectangle>(len,true);
+				mLinksRect = new Vector.<Rectangle>(len);
 				for( var i:int = 0; i<len; ++i )
 				{
-					mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x, 
-													charLoc[mLinks[i][2]].y, 
-													(charLoc[mLinks[i][3]].x+charLoc[mLinks[i][3]].char.width) - charLoc[mLinks[i][2]].x, 
-													(charLoc[mLinks[i][3]].y+charLoc[mLinks[i][3]].char.height) - charLoc[mLinks[i][2]].y );
+					if( mLinks[i][0] >= charLen	) mLinks[i][0] = charLen;
+					if( mLinks[i][1] >= charLen	) mLinks[i][1] = charLen;
+					if( mLinks[i][2] >= charLen	) mLinks[i][2] = charLen;
+					if( mLinks[i][3] >= charLen	) mLinks[i][3] = charLen;
+					
+					// verifier qu'on soit pas sur plusieurs lignes
+					if( charLoc[mLinks[i][3]].y > charLoc[mLinks[i][2]].y + charLoc[mLinks[i][2]].char.height )
+					{
+						var end:Array 		= getNextBR( mLinks[i][2], charLoc );
+						var newEnd:int 		= end[0];
+						var newStart:int 	= end[1];
+						
+						var hh:int = charLoc[newEnd].char.height;
+						
+						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
+							charLoc[mLinks[i][2]].y - hh + yOffset,
+							(charLoc[newEnd].x + charLoc[newEnd].char.width) - charLoc[mLinks[i][2]].x,
+							(charLoc[newEnd].y + charLoc[newEnd].char.height) - charLoc[mLinks[i][2]].y + hh + yOffset );
+						
+						if( newStart < charLoc.length )
+						{
+							// on met la suite du lien à la suite pour qu'il soit traité apres
+							var newLink:Array = [ mLinks[i][0], mLinks[i][1], newStart, mLinks[i][3] ];
+							mLinks.push(newLink);
+							mLinksRect.length += 1;
+							++len;
+						}
+					}
+					else
+					{
+						hh = charLoc[mLinks[i][3]].char.height;
+						
+						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
+														charLoc[mLinks[i][2]].y - hh + yOffset,
+														(charLoc[mLinks[i][3]].x + charLoc[mLinks[i][3]].char.width) - charLoc[mLinks[i][2]].x,
+														(charLoc[mLinks[i][3]].y + charLoc[mLinks[i][3]].char.height) - charLoc[mLinks[i][2]].y + hh + yOffset );
+					}
 				}
 				
-				len = charLoc.length;
-				for( i = 0; i<len; ++i )	if( charLoc[i] )	HTMLBitmapFonts.returnCharLoc( charLoc[i] );
-				HTMLBitmapFonts.returnVCharLoc( charLoc );
+				mLinksRect.fixed 	= true;
+				mLinks.fixed 		= true;
+				
+				if( charLoc )	CharLocation.returnVector(charLoc);
 				keepData = null;
 				charLoc = null;
 				
 				// lancer le touch
 				if( stage )
 				{
-					touchable = true;
+					_touchable = true;
 					addEventListener( TouchEvent.TOUCH, _onTouch );
 				}
 			}
 			else if( touchable )	
 			{
-				touchable = false;
+				_touchable = false;
 				removeEventListener( TouchEvent.TOUCH, _onTouch );
 			}
+		}
+		
+		[Inline]
+		private final function getNextBR( start:int, charLoc:Vector.<CharLocation> ):Array
+		{
+			var len				:int = charLoc.length;
+			var lastRealChar	:int = 0;
+			var spaceCode		:int = String(' ').charCodeAt(0);
+			for( var i:int = start+1; i<len; ++i )
+			{
+				if( lastRealChar > 0 && charLoc[i].y > charLoc[start].y + charLoc[start].char.height && charLoc[i].char.charID != spaceCode )		return [lastRealChar, i];
+				if( charLoc[i].char.charID != 10 && charLoc[i].char.charID != 13 && charLoc[i].char.charID != spaceCode )							lastRealChar = i;
+			}
+			return [lastRealChar, len-1];
 		}
 		
 		/** get the bounds of the text. */
@@ -400,8 +567,10 @@ package starling.extensions.HTMLBitmapFonts
 		{
 			if( mText == value )	return;
 			
-			mIsHTML = false;
-			mTextHTML = mText = value;
+			if( mLinks )	mLinks.length = 0;
+			mIsHTML 		= false;
+			mText 			= value;
+			mTextHTML 		= mText;
 			mRequiresRedraw = true;
 		}
 		
@@ -413,8 +582,9 @@ package starling.extensions.HTMLBitmapFonts
 		{
 			if( mTextHTML == value )	return;
 			
-			mIsHTML = true;
-			mTextHTML = value;
+			if( mLinks )	mLinks.length = 0;
+			mIsHTML 	= true;
+			mTextHTML 	= value;
 			
 			_parseTextHTML();
 			mRequiresRedraw = true;
@@ -442,9 +612,12 @@ package starling.extensions.HTMLBitmapFonts
 			mColors.length 	= 0;
 			if( mLinks )	mLinks.length = 0;
 			
-			var sizeActu	:int 	= mSize;
-			var colorActu	:* 		= mColor; // color or gradient
-			var styleActu	:int 	= mStyle;
+			var lastRealChar	:int = -1;
+			var isRealChar		:Boolean = false;
+			
+			var sizeActu	:int 		= mSize;
+			var colorActu	:* 			= mColor; // color or gradient
+			var styleActu	:int 		= mStyle;
 			
 			var linkActu	:Array	= null;
 			var linkStart	:Boolean = false;
@@ -456,16 +629,21 @@ package starling.extensions.HTMLBitmapFonts
 			
 			var isBold		:Boolean = mBold;
 			var isItalic	:Boolean = mItalic;
+			var isUnderline	:Boolean = mUnderline;
 			
 			var colorStr	:String;
 			var sizeStr		:String;
 			
 			var char		:String;
 			
+			var actualID	:int
+			var actualIDComputed:Boolean = false;
+			
 			var len:int = mTextHTML.length;
 			for( var i:int = 0; i<len; ++i )
 			{
 				char = mTextHTML.charAt(i);
+				actualIDComputed = false;
 				// si ouverture de balise on doit faire des truc
 				if( char == '<' )
 				{
@@ -514,18 +692,21 @@ package starling.extensions.HTMLBitmapFonts
 							break;
 						case 's':
 							sizeStr = mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) );
-							
 							sizeActu = int( sizeStr );
-							
 							prevSizes.push( sizeActu );
 							break;
 						case 'l':
 							linkActu = [ 'link', mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ) ];
 							linkStart = true;
+							if( defaultLinkColor )	colorActu = defaultLinkColor;
 							break;
 						case 'f':
 							linkActu = [ 'func', mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ) ];
 							linkStart = true;
+							if( defaultLinkColor )	colorActu = defaultLinkColor;
+							break;
+						case 'u':
+							isUnderline = true;
 							break;
 						case '/':
 							switch( mTextHTML.charAt( i+2 ).toLowerCase() )
@@ -547,6 +728,14 @@ package starling.extensions.HTMLBitmapFonts
 								case 'l':
 								case 'f':
 									linkEnd = true;
+									if( defaultLinkColor )
+									{
+										if( prevColors.length > 1 )	prevColors.pop();
+										colorActu = prevColors[prevColors.length-1];
+									}
+									break;
+								case 'u':
+									isUnderline = false;
 									break;
 							}
 							break;
@@ -570,52 +759,80 @@ package starling.extensions.HTMLBitmapFonts
 						// on ajoute la couleur actuelle
 						mColors.push( colorActu );
 					}
+					
 					// on ajoute la taille actuelle
 					mSizes.push( sizeActu );
 					// on ajoute le style actuel
 					mStyles.push( styleActu );
+					// on ajoute le soulignage
+					mUnderlines.push( isUnderline );
+					
+					if( char.charCodeAt(0) != 10 && char.charCodeAt(0) != 13 && char != ' ' )
+					{
+						lastRealChar 	= mColors.length-1;
+						isRealChar 		= true;
+					}
+					else isRealChar = false;
 					
 					if( linkActu )
 					{
-						if( linkStart )	
+						//saut de ligne en cours de lien
+						if( linkActu.length > 2 && (char.charCodeAt(0) == 10 || char.charCodeAt(0) == 13) )
 						{
-							linkActu.push( mColors.length-1 );
+							linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(lastRealChar, mText) : lastRealChar );
+							
+							if( !mLinks )	mLinks = [];
+							mLinks.push( linkActu );
+							linkStart 	= true;
+							linkActu 	= [ linkActu[0], linkActu[1] ];
+							
+							continue;
+						}
+						
+						if( linkStart && isRealChar )	
+						{
+							if( !actualIDComputed )
+							{
+								actualID 			= htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(mColors.length-1, mText) : mColors.length-1;
+								actualIDComputed 	= true;
+							}
+							
+							linkActu.push( actualID );
 							linkStart = false;
 						}
-						if( linkEnd )	
+						if( linkEnd )
 						{
-							linkActu.push( mColors.length-1 );
+							linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(lastRealChar, mText) : lastRealChar );
 							linkEnd = false;
 							
 							if( !mLinks )	mLinks = [];
 							mLinks.push( linkActu );
-							
-							//mColors[linkActu[2]] = 0xFF0000;
-							//mColors[linkActu[3]] = 0xFF0000;
-							
 							linkActu = null;
 						}
 					}
 				}
 			}
+			
 			if( linkActu )
 			{
-				if( linkStart )	
+				if( linkStart )
 				{
-					linkActu.push( mColors.length-1 );
+					if( !actualIDComputed )
+					{
+						actualID 			= htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(mColors.length-1, mText) : mColors.length-1;
+						actualIDComputed 	= true;
+					}
+					
+					linkActu.push( actualID );
 					linkStart = false;
 				}
 				if( linkEnd )	
 				{
-					linkActu.push( mColors.length-1 );
+					linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(lastRealChar, mText) : lastRealChar );
 					linkEnd = false;
 					
 					if( !mLinks )	mLinks = [];
 					mLinks.push( linkActu );
-					
-					//mColors[linkActu[2]] = 0xFF0000;
-					//mColors[linkActu[3]] = 0xFF0000;
-					
 					linkActu = null;
 				}
 			}
@@ -649,8 +866,25 @@ package starling.extensions.HTMLBitmapFonts
 			}
 		}
 		
+		/** 
+		 * Underline the text
+		 **/
+		public function get underline():Boolean { return mUnderline; }
+		public function set underline(value:Boolean):void
+		{
+			if( mUnderline != value )
+			{
+				mUnderline = value;
+				mUnderlines = [value];
+				mRequiresRedraw = true;
+			}
+		}
+		
 		/**
-		 * The base color of the text
+		 * The base color of the text<br/>
+		 * uint : 0x000000 -> solid color<br/>
+		 * array 2 : [0x000000, 0xFF0000] -> top / bottom gradient<br/>
+		 * array 4 : [0x000000, 0xFF0000, 0xFF0000, 0x000000] -> custom gradient<b/>
 		 **/
 		public function get color():* { return mColor; }
 		public function set color(value:*):void
@@ -808,6 +1042,60 @@ package starling.extensions.HTMLBitmapFonts
 			mRequiresRedraw = true;
 		}
 		
+		/** if true, the size will be enlarged to contain the text, the width is limited by maxWidth **/
+		public function get resizeField():Boolean { return mResizeField; }
+		public function set resizeField(value:Boolean):void
+		{
+			mResizeField = value;
+			mRequiresRedraw = true;
+		}
+		
+		/** the maximum width when resizeField is set to true **/
+		public function get maxWidth():int { return mMaxWidth; }
+		public function set maxWidth(value:int):void
+		{
+			mMaxWidth = value;
+			mRequiresRedraw = true;
+		}
+		
+		/** when true, the text will automaticaly go to the next line if it not fit in the width **/
+		public function get autoCR():Boolean { return mAutoCR; }
+		public function set autoCR(value:Boolean):void
+		{
+			mAutoCR = value;
+			mRequiresRedraw = true;
+		}
+		
+		/** pass it to true if you want to hide the emotes but keep their place **/
+		public function get hideEmotes():Boolean { return mHideEmotes; }
+		public function set hideEmotes(value:Boolean):void
+		{
+			mHideEmotes = value;
+			mRequiresRedraw = true;
+		}
+		
+		/** horizontal shadow offset (0 = no shadow)**/
+		public function get shadowX():int { return mShadowX; }
+		public function set shadowX(value:int):void
+		{
+			mShadowX = value;
+			mRequiresRedraw = true;
+		}
+		/** vertical shadow offset (0 = no shadow)**/
+		public function get shadowY():int { return mShadowY; }
+		public function set shadowY(value:int):void
+		{
+			mShadowY = value;
+			mRequiresRedraw = true;
+		}
+		
+		/** shadow color (default 0x222222) **/
+		public function get shadowColor():uint { return mShadowColor; }
+		public function set shadowColor(value:uint):void
+		{
+			mShadowColor = value;
+			mRequiresRedraw = true;
+		}
 		
 		/** 
 		 * force redraw 
@@ -815,6 +1103,19 @@ package starling.extensions.HTMLBitmapFonts
 		public function forceRedraw():void
 		{
 			redrawContents();
+		}
+		
+		/** 
+		 * Register emote shortcut and the texture associated 
+		 * @param shortcut the shortcut of the emote
+		 * @param texture the texture associated with ths emote
+		 * @param xOffset a custom xOffset for the emote (default 0)
+		 * @param yOffset a custom yOffset for the emote (default 0)
+		 * @param xAdvance a custom xAdvance for the emote, if -1 advance will be texture.width (default -1)
+		 **/
+		public static function registerEmote( shortcut:String, texture:Texture, xOffset:int = 0, yOffset:int = 0, xAdvance:int = -1 ):void
+		{
+			HTMLBitmapFonts.registerEmote( shortcut, texture, xOffset, yOffset, xAdvance );
 		}
 		
 		/** 
@@ -851,73 +1152,7 @@ package starling.extensions.HTMLBitmapFonts
 			return htmlBitmapFonts[name];
 		}
 		
-		/** 
-		 * Draws text into a QuadBatch
-		 * @param quadBatch the QuadBatch to fill
-		 * @param applySize if true, apply width and height of the TextField to the Quadbatch
-		 * @param applyPos if true, apply TextField positions to the QuadBatch
-		 * @param applyScale if true, apply the scale of the TextField on the QuadBatch
-		 * @param applyPivot if true, apply the pivot of the TextField on the QuadBatch
-		 **/
-		public function fillQuadBatch( quadBatch:QuadBatch, applySize:Boolean = false, applyPos:Boolean = false, applyScale:Boolean = false, applyPivot:Boolean = false ):void
-		{
-			var bitmapFont:HTMLBitmapFonts = htmlBitmapFonts[mFontName.toLowerCase()];
-			if (bitmapFont == null) throw new Error("Bitmap font not registered: " + mFontName);
-			
-			var ww:Number;
-			var hh:Number;
-			
-			// appliquer la taille du textField ou récupérer celle du quadBatch
-			if( applySize )
-			{
-				ww = mHitArea.width;
-				hh = mHitArea.height;
-			}
-			else
-			{
-				ww = quadBatch.width;
-				hh = quadBatch.height;
-			}
-			
-			// appliquer la position du textfield
-			if( applyPos )
-			{
-				quadBatch.x 		= this.x;
-				quadBatch.y 		= this.y;
-			}
-			
-			// appliquer le scale du textfield
-			if( applyScale )
-			{
-				quadBatch.scaleX 	= this.scaleX;
-				quadBatch.scaleY 	= this.scaleY;
-			}
-			
-			// appliquer le pivot du textfield
-			if( applyPivot )
-			{
-				quadBatch.pivotX 	= this.pivotX;
-				quadBatch.pivotY 	= this.pivotY;
-			}
-			
-			// si html text on applique les tableaux de taille style et couleurs
-			var sizes	:Array = mSizes && mSizes.length > 0 	? mSizes 	: [mSize];
-			var styles	:Array = mStyles && mStyles.length > 0 	? mStyles 	: [mStyle];
-			var colors	:Array = mColors && mColors.length > 0 	? mColors 	: [mColor];
-			
-			// sinon on met les valeurs de base
-			if( !mIsHTML )
-			{
-				sizes 	= [mSize];
-				styles 	= [mStyle];
-				colors 	= [mColor];
-			}
-			
-			// générer le texte
-			bitmapFont.lineSpacing = mLineSpacing;
-			bitmapFont.fillQuadBatch( quadBatch, ww, hh, mText, sizes, styles, colors, mHAlign, mVAlign, mAutoScale, mKerning, resizeField, null, autoCR );
-		}
-		
+		/** return the available sizes for the given style **/
 		public function getAvailableSizes( style:int ):Vector.<Number>
 		{
 			return HTMLBitmapFonts(htmlBitmapFonts[mFontName]).getAvailableSizesForStyle( style );
@@ -941,6 +1176,21 @@ package starling.extensions.HTMLBitmapFonts
 		public function set yy(value:Number):void
 		{
 			super.y = value;
+		}
+		
+		//-- HELPER FUNCTIONS --//
+		
+		public function getChar( style:int, charID:int, sizeIndex:int ):BitmapChar
+		{
+			return htmlBitmapFonts[mFontName].getChar( style, charID, sizeIndex );
+		}
+		public function getBaseLine( style:int, sizeIndex:int ):Number
+		{
+			return htmlBitmapFonts[mFontName].getBaseLine( style, sizeIndex );
+		}
+		public function getLineHeight( style:int, sizeIndex:int ):Number
+		{
+			return htmlBitmapFonts[mFontName].getLineHeight( style, sizeIndex );
 		}
 	}
 }
