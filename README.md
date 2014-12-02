@@ -1,6 +1,5 @@
 Starling extension for using bitmap fonts with simplified HTML tags for styling texts
 ___
-
 HTMLTextField
 =============
 
@@ -8,9 +7,9 @@ HTMLTextField
 
 <em>**HTMLTextField now supports font scaling to adapt font size, it will choose the nearest biggest font size you have registered. (or smaller if no bigger found)**</em>
 
+___
 ACCEPTED TAGS:
 --------------
-
 
 * **bold** : `<b></b>`;
 * **italic** : `<i></i>`;
@@ -32,6 +31,8 @@ ACCEPTED TAGS:
 <i>HTMLTextField uses HTMLBitmapFonts instead of the tradtional BitmapFont.</i>
 
 ___
+Usage:
+-------------------------
 
 To add a font for use with HTMLtextField you must add them to HTMLTextField with the static method <code>HTMLTextField.registerBitmapFont</code> this fonction accept as xml value the same XML as traditional BitmapFont.
 
@@ -63,7 +64,6 @@ in loadQueue -> processXML :</br>
 	}
 
 ___
-	
 Other things:
 -------------------------
 
@@ -76,9 +76,9 @@ Other things:
 * You can easily make shadows on the text by setting <code>shadowX</code>, <code>shadowY</code> and <code>shadowColor</code> vars.
 
 ___
-
 Warnings:
 -------------
+
 * <em>Only **one font name** can be used in the HTMLTextField, it can only change size, bold, italic, and color</em>
 * <em>All font styles must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
 * <em>All emotes registered must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
