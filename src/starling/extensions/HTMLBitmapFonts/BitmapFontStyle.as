@@ -5,7 +5,7 @@ package starling.extensions.HTMLBitmapFonts
 	
 	import starling.text.BitmapChar;
 	import starling.textures.Texture;
-
+	
 	/** 
 	 * BitmapFontStyle is used to keep all sizes for one font style.<br/>
 	 * This class is used by HTMLBitmapFonts and shouldn't be used as is.
@@ -36,6 +36,8 @@ package starling.extensions.HTMLBitmapFonts
 		private var mName				:String;
 		/** the sizes available for the font **/
 		private var mSizes				:Vector.<Number>;
+		/** the baselines for the font **/
+		private var mBases				:Vector.<Number>;
 		/** the lines heights by sizes **/
 		private var mLineHeights		:Vector.<Number>;
 		
@@ -56,6 +58,7 @@ package starling.extensions.HTMLBitmapFonts
 			mChars 				= new Vector.<Dictionary>( textures.length, true );
 			mLineHeights		= new Vector.<Number>( textures.length, true );
 			mSizes				= sizes ? sizes : new Vector.<Number>( textures.length, true );
+			mBases				= new Vector.<Number>( textures.length, true );
 			
 			// parser les XMLs
 			_processXMLs( fontsXml );
@@ -100,6 +103,11 @@ package starling.extensions.HTMLBitmapFonts
 			mSizes.length 		= 0;
 			mSizes 				= null;
 			
+			// vider le tableau de tailles
+			mBases.fixed 		= false;
+			mBases.length 		= 0;
+			mBases 				= null;
+			
 			// vider le tableau de hauteurs de lignes
 			mLineHeights.fixed 	= false;
 			mLineHeights.length = 0;
@@ -114,6 +122,7 @@ package starling.extensions.HTMLBitmapFonts
 			mSizes.fixed 		= false;
 			mLineHeights.fixed 	= false;
 			mChars.fixed 		= false;
+			mBases.fixed 		= false;
 			
 			var len:int = textures.length;
 			for( var i:int = 0; i<len; ++i )
@@ -135,6 +144,7 @@ package starling.extensions.HTMLBitmapFonts
 			mSizes.fixed 		= true;
 			mLineHeights.fixed 	= true;
 			mChars.fixed 		= true;
+			mBases.fixed		= true;
 		}
 		
 		/** add one size of font **/
@@ -161,7 +171,9 @@ package starling.extensions.HTMLBitmapFonts
 			mChars.fixed = true;
 			
 			// parser le xml
+			mBases.fixed = false;
 			parseFontXml( xml, mTextures.length-1 );
+			mBases.fixed = true;
 		}
 		
 		/** parse multiple xmls **/
@@ -177,14 +189,22 @@ package starling.extensions.HTMLBitmapFonts
 			var frame	:Rectangle 	= mTextures[i].frame;
 			var frameX	:Number 	= frame ? frame.x : 0;
 			var frameY	:Number 	= frame ? frame.y : 0;
-			
+			/*
 			// si on a pas encore de nom pour la font on récupere celui du xml
-			if( mName == '' )	mName = fontXml.info.attribute("face");
-			
+			if( mName == '' )	mName = String('_'+fontXml.info.attribute("face")).substr(1);
 			// récupérer la taille de la font si on ne l'a pas fournie
 			if( !mSizes[i] )	mSizes[i] = parseFloat( fontXml.info.attribute("size") ) / scale;
 			// récupérer la hauteur de ligne de la font
 			mLineHeights[i] = parseFloat( fontXml.common.attribute("lineHeight") ) / scale;
+			*/
+			// si on a pas encore de nom pour la font on récupere celui du xml
+			if( mName == '' )	mName = String('_'+fontXml.info.@face).substr(1);
+			// récupérer la taille de la font si on ne l'a pas fournie
+			if( !mSizes[i] )	mSizes[i] = parseFloat( fontXml.info.@size ) / scale;
+			// récupérer la hauteur de ligne de la font
+			mLineHeights[i] = parseFloat( fontXml.common.@lineHeight ) / scale;
+			// récuperer le baseline de la font
+			mBases[i] 		= parseFloat(fontXml.common.@base) / scale;
 			
 			// on gere les tailles invalides
 			if( mSizes[i] <= 0 )
@@ -196,9 +216,10 @@ package starling.extensions.HTMLBitmapFonts
 			var maxHeight:Number = 0;
 			
 			// créer les caractères en fonction du xml
-			for each( var charElement:XML in fontXml.chars.char )
+			var chars:XMLList = fontXml.chars.char
+			for each( var charElement:XML in chars )
 			{
-				var id			:int 		= parseInt( charElement.attribute("id") );
+				/*var id			:int 		= parseInt( charElement.attribute("id") );
 				var xOffset		:Number 	= parseFloat( charElement.attribute("xoffset") ) / scale;
 				var yOffset		:Number 	= parseFloat( charElement.attribute("yoffset") ) / scale;
 				var xAdvance	:Number 	= parseFloat( charElement.attribute("xadvance") ) / scale;
@@ -207,7 +228,43 @@ package starling.extensions.HTMLBitmapFonts
 				region.x 					= parseFloat( charElement.attribute("x") ) / scale + frameX;
 				region.y 					= parseFloat( charElement.attribute("y") ) / scale + frameY;
 				region.width  				= parseFloat( charElement.attribute("width") ) / scale;
-				region.height 				= parseFloat( charElement.attribute("height") ) / scale;
+				region.height 				= parseFloat( charElement.attribute("height") ) / scale;*/
+				
+				var id			:int 		= parseInt( charElement.@id );
+				var xOffset		:Number 	= parseFloat( charElement.@xoffset ) / scale;
+				var yOffset		:Number 	= parseFloat( charElement.@yoffset ) / scale;
+				var xAdvance	:Number 	= parseFloat( charElement.@xadvance ) / scale;
+				
+				var region		:Rectangle 	= new Rectangle();
+				region.x 					= parseFloat( charElement.@x ) / scale + frameX;
+				region.y 					= parseFloat( charElement.@y ) / scale + frameY;
+				region.width  				= parseFloat( charElement.@width ) / scale;
+				region.height 				= parseFloat( charElement.@height ) / scale;
+				
+				if( region.width > 0 && region.height > 0 )
+				{
+					if( region.x > 0 )	
+					{
+						region.x -= 1;
+						region.width += 2;
+						xOffset-=1;
+					}
+					else
+					{
+						region.width += 1;
+					}
+				
+					if( region.y > 0 )	
+					{
+						region.y -= 1;
+						region.height += 2;
+						yOffset-=1;
+					}
+					else
+					{
+						region.height += 1;
+					}
+				}
 				
 				var texture		:Texture 	= Texture.fromTexture( mTextures[i], region );
 				var bitmapChar	:BitmapChar = new BitmapChar( id, texture, xOffset, yOffset, xAdvance ); 
@@ -222,9 +279,12 @@ package starling.extensions.HTMLBitmapFonts
 			// ajouter le kerning
 			for each( var kerningElement:XML in fontXml.kernings.kerning )
 			{
-				var first	:int = parseInt( kerningElement.attribute("first") );
+				/*var first	:int = parseInt( kerningElement.attribute("first") );
 				var second	:int = parseInt( kerningElement.attribute("second") );
-				var amount	:Number = parseFloat( kerningElement.attribute("amount") ) / scale;
+				var amount	:Number = parseFloat( kerningElement.attribute("amount") ) / scale;*/
+				var first	:int = parseInt( kerningElement.@first );
+				var second	:int = parseInt( kerningElement.@second );
+				var amount	:Number = parseFloat( kerningElement.@amount ) / scale;
 				if( second in mChars ) getChar(second, i).addKerning(first, amount);
 			}
 		}
@@ -232,7 +292,7 @@ package starling.extensions.HTMLBitmapFonts
 		/** Returns a single bitmap char with a certain character ID. */
 		public function getCharForSize(charID:int, size:Number):BitmapChar
 		{
-			return mChars[getBiggerOrEqualSizeIndex(size)][charID];   
+			return mChars[getBiggerOrEqualSizeIndex(size)][charID];
 		}
 		
 		/** Returns a single bitmap char with a certain character ID. */
@@ -282,8 +342,8 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** return the available size bigger or equal to the desired value **/
-		[inline]
-		public function getBiggerOrEqualSize( value:Number ):Number
+		[Inline]
+		public final function getBiggerOrEqualSize( value:Number ):Number
 		{
 			var bigger:Number = int.MAX_VALUE;
 			var biggestDispo:int = 0;
@@ -300,8 +360,8 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** return the index of the available size bigger or equal to the desired value **/
-		[inline]
-		public function getBiggerOrEqualSizeIndex( value:Number ):Number
+		[Inline]
+		public final function getBiggerOrEqualSizeIndex( value:Number ):Number
 		{
 			var bigger:Number = getBiggerOrEqualSize(value);
 			return mSizes.indexOf(bigger);
@@ -336,6 +396,12 @@ package starling.extensions.HTMLBitmapFonts
 			return mLineHeights[i];
 		}
 		
+		/** return the line height for the size index **/
+		public function getLineHeightForSizeIndex(sizeIndex:int):Number
+		{
+			return mLineHeights[sizeIndex];
+		}
+		
 		/** return the closer available font size for the line height **/
 		public function getSizeForLineHeight( lineHeight:Number ):Number
 		{
@@ -353,13 +419,25 @@ package starling.extensions.HTMLBitmapFonts
 				}
 			}
 			
+			if( mLineHeights[idActu]<lineHeight && mLineHeights.length > idActu+2 )	++idActu;
+			
 			return mSizes[idActu];
+		}
+		
+		public function getSizeAtIndex(index:int):Number
+		{
+			return mSizes[index];
 		}
 		
 		/** returns available sizes **/
 		public function get availableSizes():Vector.<Number>
 		{
 			return mSizes;
+		}
+		
+		public function getBaseLine(index:int):Number
+		{
+			return mBases[index];
 		}
 	}
 }
