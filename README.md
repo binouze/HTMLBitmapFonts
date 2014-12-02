@@ -6,7 +6,7 @@ HTMLTextField
 
 <code>HTMLTextField</code> is a Starling TextField for using with <il>simplified html notation</il> (just for styling: no links, no images...).
 
-<em>**HTMLTextField now supports font scaling to adapt font size, it will choose the nearest biggest font size you have registered.**</em>
+<em>**HTMLTextField now supports font scaling to adapt font size, it will choose the nearest biggest font size you have registered. (or smaller if no bigger found)**</em>
 
 ACCEPTED TAGS:
 --------------
