@@ -74,6 +74,7 @@ Other things:
 * You can change the line spacing of the text by setting the <code>lineSpacing</code> var to something other than 0.
 * Added left centered and right centered horizontal alignements rules, use <code>HTMLTextField.LEFT_CENTERED</code> and <code>HTMLTextField.RIGHT_CENTERED</code>.
 * You can easily make shadows on the text by setting <code>shadowX</code>, <code>shadowY</code> and <code>shadowColor</code> vars.
+
 ___
 
 Warnings:
