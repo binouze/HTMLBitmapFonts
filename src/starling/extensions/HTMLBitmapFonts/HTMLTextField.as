@@ -41,8 +41,10 @@ package starling.extensions.HTMLBitmapFonts
 		/** define the default links color, null for no change (default null)**/
 		public var defaultLinkColor				:* = null;
 		
-		/** the function to call to navigate to url (default flash.net.navigateToURL) **/
-		public var navigateToURLFunction		:Function 			= HTMLTextField._navigateToURL;
+		/** static default method to navigate to url, you are still able to change it by field using the non static method **/ 
+		public static var navigateToURLFunction	:Function			= HTMLTextField._navigateToURL;
+		/** the function to call to navigate to url **/
+		public var navigateToURLFunction		:Function 			= HTMLTextField.navigateToURLFunction;
 		/** the urlRequest used by navigate to url function **/
 		private static var _urlRequest			:URLRequest = new URLRequest();
 		/** default navigate to urlFunction **/
