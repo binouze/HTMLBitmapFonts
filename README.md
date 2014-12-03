@@ -3,7 +3,7 @@ ___
 HTMLTextField
 =============
 
-<code>HTMLTextField</code> is a Starling TextField for using with <il>simplified html notation</il> (just for styling: no links, no images...).
+<code>HTMLTextField</code> is a Starling TextField for using with <il>simplified html notation</il>
 
 <em>**HTMLTextField now supports font scaling to adapt font size, it will choose the nearest biggest font size you have registered. (or smaller if no bigger found)**</em>
 
@@ -68,7 +68,8 @@ Other things:
 -------------------------
 
 * You can add emotes to the text, just register the emotes shortcut and the texture associated.<br/>
-<code>HTMLTextField.registerEmote( "{smiley}", mySmyleyTexture );</code>
+<code>HTMLTextField.registerEmote( "{smiley}", mySmyleyTexture );</code><br/>
+<em>you can configure offsets x and y, xAdvance, and margins for each emotes.</em>
 * You can prevent auto carriage return by setting the <code>autoCR</code> var to <code>false</code>
 * You can autorize the text to extend automaticaly if the text not fit by setting the <code>resizeField</code> var to <code>true</code>
 * You can change the line spacing of the text by setting the <code>lineSpacing</code> var to something other than 0.
