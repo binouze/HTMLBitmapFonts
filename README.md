@@ -13,7 +13,8 @@ ACCEPTED TAGS:
 
 * **bold** : `<b></b>`;
 * **italic** : `<i></i>`;
-* **underlined** : `<u></u>`; <br/><em> you have to provide the underline texture with: <code>HTMLBitmapFonts.underlineTexture = yourTexture</code></em> for this to work.
+* **underlined** : `<u></u>`; <br/>
+<em>you have to provide the underline texture with: <code>HTMLBitmapFonts.underlineTexture = yourTexture</code> for this to work.</em>
 * **size**   : `<size="10"></size>` or `<s="10"></s>`;
 * **colors** : _don't forget '0x' or '#' !_
  * **solid** : <br/>
@@ -25,8 +26,13 @@ ACCEPTED TAGS:
  * **gradient up-left/up-right/down-left/down-right** : <br/>
  `<color="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></color>` or <br/>
  `<c="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></c>`
-* **links** : `<l="your-url.com">text to click</l>`; <br/><em>you can use <code>defaultLinkColor</code> var to auto colorize the links.</em>
-* **dispatch Event** : `<f="string var to dispatch">text to click</f>`; <br/><em>you can use <code>defaultLinkColor</code> var to auto colorize the links.</em>
+* **links** : `<l="your-url.com">text to click</l>`; <br/>
+ * <em>you can use <code>defaultLinkColor</code> var to auto colorize the links.</em>
+ * <em>you can define a function to navigate to url for just one textField with <code>myTextField.navigateToURLFunction = function(url:String):void{...}</code></em>
+ * <em>you can define a function to navigate to url for all textFields with the static function <code>HTMLTextField.navigateToURLFunction = function(url:String):void{...}</code></em>
+ * <em>by default the <code>navigateToURLFunction</code> function internaly uses the <code>flash.net.navigateToURL</code> function</em>
+* **dispatch Event** : `<f="string var to dispatch">text to click</f>`; <br/>
+ * <em>you can use <code>defaultLinkColor</code> var to auto colorize the links.</em>
 
 <i>HTMLTextField uses HTMLBitmapFonts instead of the tradtional BitmapFont.</i>
 
@@ -75,7 +81,7 @@ Other things:
 * You can change the line spacing of the text by setting the <code>lineSpacing</code> var to something other than 0.
 * Added left centered and right centered horizontal alignements rules, use <code>HTMLTextField.LEFT_CENTERED</code> and <code>HTMLTextField.RIGHT_CENTERED</code>.
 * You can easily make shadows on the text by setting <code>shadowX</code>, <code>shadowY</code> and <code>shadowColor</code> vars.
-
+* You can limit the min font size when <code>autoScale</code> is true width the <code>minFontSize</code> var.
 ___
 Warnings:
 -------------
