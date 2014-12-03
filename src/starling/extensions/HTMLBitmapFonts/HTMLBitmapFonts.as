@@ -17,18 +17,18 @@ package starling.extensions.HTMLBitmapFonts
 	 *
 	 * <listing>
 	 &lt;font&gt;
-		 &lt;info face="BranchingMouse" size="40" /&gt;
-		 &lt;common lineHeight="40" /&gt;
-		 &lt;pages&gt; &lt;!-- currently, only one page is supported --&gt;
-			 &lt;page id="0" file="texture.png" /&gt;
-		 &lt;/pages&gt;
-		 &lt;chars&gt;
-			 &lt;char id="32" x="60" y="29" width="1" height="1" xoffset="0" yoffset="27" xadvance="8" /&gt;
-		 	&lt;char id="33" x="155" y="144" width="9" height="21" xoffset="0" yoffset="6" xadvance="9" /&gt;
-		 &lt;/chars&gt;
-		 &lt;kernings&gt; &lt;!-- Kerning is optional --&gt;
-		 	&lt;kerning first="83" second="83" amount="-4"/&gt;
-		 &lt;/kernings&gt;
+	 &lt;info face="BranchingMouse" size="40" /&gt;
+	 &lt;common lineHeight="40" /&gt;
+	 &lt;pages&gt; &lt;!-- currently, only one page is supported --&gt;
+	 &lt;page id="0" file="texture.png" /&gt;
+	 &lt;/pages&gt;
+	 &lt;chars&gt;
+	 &lt;char id="32" x="60" y="29" width="1" height="1" xoffset="0" yoffset="27" xadvance="8" /&gt;
+	 &lt;char id="33" x="155" y="144" width="9" height="21" xoffset="0" yoffset="6" xadvance="9" /&gt;
+	 &lt;/chars&gt;
+	 &lt;kernings&gt; &lt;!-- Kerning is optional --&gt;
+	 &lt;kerning first="83" second="83" amount="-4"/&gt;
+	 &lt;/kernings&gt;
 	 &lt;/font&gt;
 	 * </listing>
 	 * 
@@ -38,18 +38,18 @@ package starling.extensions.HTMLBitmapFonts
 	 * 
 	 else if( rootNode == "font" )
 	 {
-		 name 	= xml.info.&#64;face.toString();
-		 fileName 	= getName(xml.pages.page.&#64;file.toString());
-		 isBold 	= xml.info.&#64;bold == 1;
-		 isItalic 	= xml.info.&#64;italic == 1;
-		 
-		 log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
-		 
-		 fontTexture = getTexture( fileName );
-		 HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.&#64;size, isBold, isItalic, name.toLowerCase() );
-		 removeTexture( fileName, false );
-		 
-		 mLoadedHTMLFonts.push( name.toLowerCase() );
+	 name 	= xml.info.&#64;face.toString();
+	 fileName 	= getName(xml.pages.page.&#64;file.toString());
+	 isBold 	= xml.info.&#64;bold == 1;
+	 isItalic 	= xml.info.&#64;italic == 1;
+	 
+	 log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
+	 
+	 fontTexture = getTexture( fileName );
+	 HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.&#64;size, isBold, isItalic, name.toLowerCase() );
+	 removeTexture( fileName, false );
+	 
+	 mLoadedHTMLFonts.push( name.toLowerCase() );
 	 }
 	 * </listing>
 	 */ 
@@ -181,7 +181,7 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// créer le BitmapFontStyle pour le style si il n'existe pas encore
 			if( !mFontStyles[index] )	mFontStyles[index] = new BitmapFontStyle( index, textures, fontsXml, sizes );
-			// ajouter les tailles de font au BitmapFontStyle
+				// ajouter les tailles de font au BitmapFontStyle
 			else						mFontStyles[index].addMultipleSizes( textures, fontsXml, sizes );
 			
 			// si le helperImage n'existe pas encore on le crée
@@ -210,7 +210,7 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// créer le BitmapFontStyle pour le style si il n'existe pas encore
 			if( !mFontStyles[index] )	mFontStyles[index] = new BitmapFontStyle( index, new <Texture>[texture], new <XML>[xml], new <Number>[size] );
-			// ajouter la taille de font au BitmapFontStyle
+				// ajouter la taille de font au BitmapFontStyle
 			else						mFontStyles[index].add( texture, xml, size );
 			
 			// si le helperImage n'existe pas encore on le crée
@@ -251,12 +251,13 @@ package starling.extensions.HTMLBitmapFonts
 		 * @param autoCR (default true) do auto line break or not.
 		 * @param maxWidth the max width if resizeQuad is true.
 		 * @param hideEmote, if true the emote wont be displayed.
-		 * @param offsetEmote an y offset to add to the emotes of this text. 
+		 * @param minFontSize the minimum font size to reduce to. 
 		 **/
 		public function fillQuadBatch(quadBatch:QuadBatch, width:Number, height:Number, text:String,
 									  fontSizes:Array = null, styles:Array = null, colors:Array = null, underlines:Array = null,
 									  hAlign:String="center", vAlign:String="center", autoScale:Boolean=true, 
-									  kerning:Boolean=true, resizeQuad:Boolean = false, keepDatas:Object = null, autoCR:Boolean = true, maxWidth:int = 900, hideEmotes:Boolean = false ):void
+									  kerning:Boolean=true, resizeQuad:Boolean = false, keepDatas:Object = null, 
+									  autoCR:Boolean = true, maxWidth:int = 900, hideEmotes:Boolean = false, minFontSize:int = 10 ):void
 		{
 			// découper le tableau de couleur pour ignorer les caracteres à remplacer par des emotes
 			if( _emotesTxt )
@@ -283,7 +284,7 @@ package starling.extensions.HTMLBitmapFonts
 			}
 			
 			// générer le tableau de CharLocation
-			var charLocations	:Vector.<CharLocation> 	= arrangeChars( width, height, text, fontSizes.concat(), styles.concat(), hAlign, vAlign, autoScale, kerning, resizeQuad, autoCR, maxWidth );
+			var charLocations	:Vector.<CharLocation> 	= arrangeChars( width, height, text, fontSizes.concat(), styles.concat(), hAlign, vAlign, autoScale, kerning, resizeQuad, autoCR, maxWidth, minFontSize );
 			
 			// cas foireux pour le texte qui apparait mots à mots
 			if( keepDatas )			keepDatas.loc = CharLocation.cloneVector( charLocations );
@@ -419,7 +420,7 @@ package starling.extensions.HTMLBitmapFonts
 									   fontSizes:Array = null, styles:Array = null, 
 									   hAlign:String="center", vAlign:String="center", 
 									   autoScale:Boolean=true, kerning:Boolean=true, resizeQuad:Boolean = false, 
-									   autoCR:Boolean = true, maxWidth:int = 900 ):Vector.<CharLocation>
+									   autoCR:Boolean = true, maxWidth:int = 900, minFontSize:int = 10 ):Vector.<CharLocation>
 		{
 			// si pas de texte on renvoi un tableau vide
 			if( text == null || text.length == 0 ) 		return CharLocation.vectorFromPool();
@@ -452,6 +453,7 @@ package starling.extensions.HTMLBitmapFonts
 				lines.length 		= 0;
 				linesSizes.length 	= 0;
 				baselines.length 	= 0;
+				
 				
 				var lineStart		:int		= 0;
 				var emoteInLine		:int 		= 0;
@@ -587,7 +589,7 @@ package starling.extensions.HTMLBitmapFonts
 										if( width >= maxWidth )		goto ignore;
 										goto suite;
 									}
-									else if( !_reduceSizes(fontSizes) )	
+									else if( !_reduceSizes(fontSizes, minFontSize) )	
 									{
 										goto ignore;
 									}
@@ -618,7 +620,7 @@ package starling.extensions.HTMLBitmapFonts
 									if( temp.length == 0 )	
 									{
 										if( resizeQuad )	goto suite;
-										_reduceSizes(fontSizes);
+										_reduceSizes(fontSizes, minFontSize);
 										break;
 									}
 									currentLine = temp;
@@ -634,7 +636,7 @@ package starling.extensions.HTMLBitmapFonts
 							}
 							else
 							{
-								_reduceSizes(fontSizes);
+								_reduceSizes(fontSizes, minFontSize);
 								break;
 							}
 						}
@@ -652,7 +654,7 @@ package starling.extensions.HTMLBitmapFonts
 						//currentMaxSize = 0;
 						finished = true;
 					}
-					// fin de ligne
+						// fin de ligne
 					else if( lineFull )
 					{
 						if( resizeQuad && charLocation.x + charLocation.width > width )
@@ -692,7 +694,7 @@ package starling.extensions.HTMLBitmapFonts
 						else
 						{
 							// il faut baisser la taille de la font -> on arrete la
-							_reduceSizes(fontSizes);
+							_reduceSizes(fontSizes, minFontSize);
 							//trace( 'pas de place pour une nouvelle ligne', text );
 							break;
 						}
@@ -721,7 +723,7 @@ package starling.extensions.HTMLBitmapFonts
 			} // while (!finished)
 			
 			// le tableau de positionnement final des caractères
- 			var finalLocations	:Vector.<CharLocation> 	= CharLocation.vectorFromPool();//new <CharLocation>[];
+			var finalLocations	:Vector.<CharLocation> 	= CharLocation.vectorFromPool();//new <CharLocation>[];
 			// le nombre de lignes
 			var numLines		:int 					= lines.length;
 			// le y max du texte
@@ -818,16 +820,22 @@ package starling.extensions.HTMLBitmapFonts
 		private var _reducedSizes	:Array;
 		/** reduce the size of all items in the array **/
 		[Inline]
-		private final function _reduceSizes( sizes:Array ):Boolean
+		private final function _reduceSizes( sizes:Array, minFontSize:int ):Boolean
 		{
 			// récupérer la taille du tableau de tailles
 			var len			:int = sizes.length;
 			var limite		:int = 0;
+			var target		:int;
 			_reducedSizes 	= [];
 			for( var i:int = 0; i<len; ++i )
 			{
-				_reducedSizes[i] = sizes[i]-1;
-				if( _reducedSizes[i] <= 0 )	++limite;	
+				target = sizes[i]-1;
+				if( target < minFontSize )
+				{
+					target = minFontSize;
+					++limite;
+				}
+				_reducedSizes[i] = target;
 			}
 			if( limite >= len-1 )
 			{
@@ -871,3 +879,5 @@ package starling.extensions.HTMLBitmapFonts
 		}
 	}
 }
+import starling.extensions.HTMLBitmapFonts;
+

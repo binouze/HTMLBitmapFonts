@@ -89,6 +89,8 @@ package starling.extensions.HTMLBitmapFonts
 		protected var mAutoCR					:Boolean = true;
 		/** pass it to true if you want to hide the emotes but keep their place **/
 		protected var mHideEmotes				:Boolean = false;
+		/** the minimum font size to reduce to **/
+		protected var mMinFontSize				:int = 10;
 		
 		//-- auto resize --//
 		
@@ -372,7 +374,7 @@ package starling.extensions.HTMLBitmapFonts
 			var keepData:Object = mLinks && mLinks.length > 0 ? {} : null;
 			// on fait draw le texte en fonction des parametres
 			bitmapFont.lineSpacing = mLineSpacing;
-			bitmapFont.fillQuadBatch( mQuadBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, underlines, mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, keepData, mAutoCR, mMaxWidth, mHideEmotes );
+			bitmapFont.fillQuadBatch( mQuadBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, underlines, mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, keepData, mAutoCR, mMaxWidth, mHideEmotes, mMinFontSize );
 			
 			if( mShadowX != 0 || mShadowY != 0 )
 			{
@@ -386,7 +388,7 @@ package starling.extensions.HTMLBitmapFonts
 				else
 					mQuadBatchS.reset();
 				
-				bitmapFont.fillQuadBatch( mQuadBatchS, mHitArea.width, mHitArea.height, mText, sizes, styles, [mShadowColor], [false], mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, false, mAutoCR, mMaxWidth, true );
+				bitmapFont.fillQuadBatch( mQuadBatchS, mHitArea.width, mHitArea.height, mText, sizes, styles, [mShadowColor], [false], mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, false, mAutoCR, mMaxWidth, true, mMinFontSize );
 				mQuadBatchS.x = mShadowX;
 				mQuadBatchS.y = mShadowY;
 			}
@@ -1094,6 +1096,14 @@ package starling.extensions.HTMLBitmapFonts
 		public function set shadowColor(value:uint):void
 		{
 			mShadowColor = value;
+			mRequiresRedraw = true;
+		}
+		
+		/** minimum font size to reduce to (default 10) **/
+		public function get minFontSize():int { return mMinFontSize; }
+		public function set minFontSize(value:int):void
+		{
+			mMinFontSize = value;
 			mRequiresRedraw = true;
 		}
 		
