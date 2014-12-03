@@ -83,4 +83,4 @@ Warnings:
 * <em>All font styles must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
 * <em>All emotes registered must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
 * <em>The underline texture must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
-* <em>For better performance it's a must to start emote by '{' char</em>
+* <em>For better performance it's a must to start emote by **{** char</em>
