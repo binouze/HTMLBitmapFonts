@@ -68,7 +68,7 @@ Other things:
 -------------------------
 
 * You can add emotes to the text, just register the emotes shortcut and the texture associated.<br/>
-<code>HTMLTextField.registerEmote( ":)", mySmyleyTexture );</code>
+<code>HTMLTextField.registerEmote( "{smiley}", mySmyleyTexture );</code>
 * You can prevent auto carriage return by setting the <code>autoCR</code> var to <code>false</code>
 * You can autorize the text to extend automaticaly if the text not fit by setting the <code>resizeField</code> var to <code>true</code>
 * You can change the line spacing of the text by setting the <code>lineSpacing</code> var to something other than 0.
@@ -83,3 +83,4 @@ Warnings:
 * <em>All font styles must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
 * <em>All emotes registered must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
 * <em>The underline texture must be on the **same atlas** as the textField is drawn on a QuadBatch</em>
+* <em>For better performance it's a must to start emote by '{' char</em>
