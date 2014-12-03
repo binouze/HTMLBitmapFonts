@@ -21,7 +21,7 @@ ACCEPTED TAGS:
  `<c="0xFF0000"></c>`;
  * **gradient up / down** : <br/>
  `<color="0xFF0000,0xFFFFFF"></color>` or <br/>
- `<c="0xFF00000xFFFFFF"></c>;`
+ `<c="0xFF0000,0xFFFFFF"></c>;`
  * **gradient up-left/up-right/down-left/down-right** : <br/>
  `<color="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></color>` or <br/>
  `<c="0xFF0000,0xFFFFFF,0x000000,0x0000FF"></c>`
