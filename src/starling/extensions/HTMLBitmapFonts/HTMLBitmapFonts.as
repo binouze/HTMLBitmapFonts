@@ -863,7 +863,7 @@ package starling.extensions.HTMLBitmapFonts
 				}
 				_reducedSizes[i] = target;
 			}
-			if( limite >= len-1 )
+			if( limite >= len )
 			{
 				_reducedSizes = null;
 				return false;
