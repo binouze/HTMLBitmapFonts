@@ -420,7 +420,7 @@ package starling.extensions.HTMLBitmapFonts
 			if( mQuadBatchS )	
 				mQuadBatchS.y 	= yOffset + shadowY;
 			
-			if( mLinks && mLinks.length > 0 )
+			if( mLinks && mLinks.length > 0 && keepData && keepData.loc && keepData.loc.length > 0 )
 			{
 				var charLoc:Vector.<CharLocation> = keepData.loc;
 				var charLen:int = charLoc.length-1;

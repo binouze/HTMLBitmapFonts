@@ -119,6 +119,10 @@ package starling.extensions.HTMLBitmapFonts
 		/** the vector for the baselines **/
 		private static var baselines				:Vector.<Number>;
 		
+		private static var mSizeIndexes				:Vector.<int>;
+		private static var mScales					:Vector.<Number>;
+		private static var mLineHeights				:Vector.<Number>;
+		
 		/** the underline texture **/
 		private static var _underlineTexture		:Texture;
 		/** define the texture to use for underlines **/
@@ -133,10 +137,13 @@ package starling.extensions.HTMLBitmapFonts
 		 **/
 		public function HTMLBitmapFonts( name:String )
 		{
-			// créer la pool en statique si elle n'existe pas encore
+			// créer les tableaux statiques si ils n'existent pas encore
 			if( !lines )				lines 				= new <Vector.<CharLocation>>[];
 			if( !linesSizes )			linesSizes			= new <Number>[];
 			if( !baselines )			baselines			= new <Number>[];
+			if( !mSizeIndexes )			mSizeIndexes		= new <int>[];
+			if( !mScales )				mScales				= new <Number>[];
+			if( !mLineHeights )			mLineHeights		= new <Number>[];
 			
 			// définir le nom de la font
 			mName 				= name;
@@ -439,7 +446,7 @@ package starling.extensions.HTMLBitmapFonts
 			// le nombre de caracteres à traiter
 			var numChars			:int;
 			// la hauteur de ligne pour le plus gros caractère
-			//var biggestLineHeight	:int;
+			var biggestLineHeight	:int;
 			// la taille de font du caractere actuel
 			var sizeActu			:int;
 			// la style de font du caractere actuel
@@ -454,252 +461,271 @@ package starling.extensions.HTMLBitmapFonts
 				linesSizes.length 	= 0;
 				baselines.length 	= 0;
 				
+				// récuperer la hauteur du plus haut caractere savoir si il rentre dans la zone ou pas
+				biggestLineHeight 	= Math.ceil( _getBiggestLineHeight( fontSizes, styles, text.length ) );
 				
-				var lineStart		:int		= 0;
-				var emoteInLine		:int 		= 0;
-				var lastWhiteSpace	:int 		= -1;
-				var lastWhiteSpaceL	:int 		= -1;
-				var lastCharID		:int 		= -1;
-				var currentX		:Number 	= 0;
-				var currentY		:Number 	= 0;
-				var currentLine		:Vector.<CharLocation> = CharLocation.vectorFromPool();
-				var currentMaxSize	:Number = 0;
-				var currentMaxSizeS	:Number = 0;
-				var realMaxSize		:Number = 0;
-				var lineHeight		:Number;
-				var baseLine		:Number;
-				var currentMaxBase	:Number = 0;
-				// reset reduced sizes
-				_reducedSizes 		= null;
-				
-				numChars = text.length;
-				for( i = 0; i<numChars; ++i )
+				// si le plus gros caractere rentre en hauteur dans la zone spécifiée
+				if( resizeQuad || biggestLineHeight <= height )
 				{
-					// récupérer la taille actuelle
-					if( i < fontSizes.length )		sizeActu 	= fontSizes[i];
-					// récupérer le syle actuel
-					if( i < styles.length )			styleActu 	= styles[i];
+					var lineStart		:int		= 0;
+					var emoteInLine		:int 		= 0;
+					var lastWhiteSpace	:int 		= -1;
+					var lastWhiteSpaceL	:int 		= -1;
+					var lastCharID		:int 		= -1;
+					var currentX		:Number 	= 0;
+					var currentY		:Number 	= 0;
+					var currentLine		:Vector.<CharLocation> = CharLocation.vectorFromPool();
+					var currentMaxSize	:Number 	= 0;
+					var currentMaxSizeS	:Number 	= 0;
+					var realMaxSize		:Number 	= 0;
+					var lineHeight		:Number;
+					var baseLine		:Number;
+					var currentMaxBase	:Number 	= 0;
+					// reset reduced sizes
+					_reducedSizes 		= null;
 					
-					// style erroné on prend le stle de base
-					if( styleActu > BitmapFontStyle.NUM_STYLES || !mFontStyles[styleActu] )	styleActu = _baseStyle;
-					
-					// le size index pour pas avoir a le recuperer a chaque fois
-					var sizeIndex	:int = mFontStyles[styleActu].getBiggerOrEqualSizeIndex( sizeActu );
-					// reset le isEmote
-					var isEmote		:Boolean 	= false;
-					// c'est une nouvelle ligne donc la ligne n'est surrement pas finie
-					var lineFull	:Boolean 	= false;
-					// récupérer le CharCode du caractère actuel
-					var charID		:int 		= text.charCodeAt(i);
-					// récupérer le BitmapChar du caractère actuel
-					var char		:BitmapChar = mFontStyles[styleActu].getChar( charID, sizeIndex );
-					// le caractère n'est pas disponible, on remplace par un espace
-					if( char == null )
+					numChars = text.length;
+					for( i = 0; i<numChars; ++i )
 					{
-						if( charID != CHAR_NEWLINE && charID != CHAR_CARRIAGE_RETURN )	charID = CHAR_SPACE;
-						char = mFontStyles[styleActu].getChar( CHAR_SPACE, sizeIndex );
-					}
-					
-					// calculate scale
-					scaleActu 		= sizeActu / mFontStyles[styleActu].getSizeAtIndex(sizeIndex);
-					lineHeight 		= mFontStyles[styleActu].getLineHeightForSizeIndex(sizeIndex);
-					baseLine 		= mFontStyles[styleActu].getBaseLine(sizeIndex)
-					
-					if( baseLine > currentMaxBase )					currentMaxBase 	= baseLine;
-					if( lineHeight > currentMaxSize )				currentMaxSize 	= lineHeight;
-					if( lineHeight*scaleActu > currentMaxSizeS )	currentMaxSizeS = lineHeight*scaleActu;
-					if( currentMaxSizeS > realMaxSize )				realMaxSize 	= currentMaxSizeS;
-					
-					if( _emotesTxt )
-					{
-						for( var e:int = 0; e<_emotesTxt.length; ++e )
+						// récupérer la taille actuelle
+						if( i < fontSizes.length )		sizeActu 	= fontSizes[i];
+						// récupérer le syle actuel
+						if( i < styles.length )			styleActu 	= styles[i];
+						
+						// style erroné on prend le stle de base
+						if( styleActu > BitmapFontStyle.NUM_STYLES || !mFontStyles[styleActu] )	styleActu = _baseStyle;
+						
+						// le size index pour pas avoir a le recuperer a chaque fois
+						var sizeIndex	:int 		= mSizeIndexes[i];//mFontStyles[styleActu].getBiggerOrEqualSizeIndex( sizeActu );
+						// reset le isEmote
+						var isEmote		:Boolean 	= false;
+						// c'est une nouvelle ligne donc la ligne n'est surrement pas finie
+						var lineFull	:Boolean 	= false;
+						// récupérer le CharCode du caractère actuel
+						var charID		:int 		= text.charCodeAt(i);
+						// récupérer le BitmapChar du caractère actuel
+						var char		:BitmapChar = mFontStyles[styleActu].getChar( charID, sizeIndex );
+						// le caractère n'est pas disponible, on remplace par un espace
+						if( char == null )
 						{
-							if( text.charAt(i) == _emotesTxt[e].charAt(0) && text.substr(i,_emotesTxt[e].length) == _emotesTxt[e] )
-							{
-								char = _emotesTextures[e];
-								i += _emotesTxt[e].length-1;
-								isEmote = true;
-								break;
-							}
+							if( charID != CHAR_NEWLINE && charID != CHAR_CARRIAGE_RETURN )	charID = CHAR_SPACE;
+							char = mFontStyles[styleActu].getChar( CHAR_SPACE, sizeIndex );
 						}
-						if( isEmote && char.height > realMaxSize )
+						
+						// calculate scale
+						scaleActu 		= mScales[i];//sizeActu / mFontStyles[styleActu].getSizeAtIndex(sizeIndex);
+						lineHeight 		= mLineHeights[i];//mFontStyles[styleActu].getLineHeightForSizeIndex(sizeIndex);
+						baseLine 		= mFontStyles[styleActu].getBaseLine(sizeIndex)
+						
+						if( baseLine > currentMaxBase )					currentMaxBase 	= baseLine;
+						if( lineHeight > currentMaxSize )				currentMaxSize 	= lineHeight;
+						if( lineHeight*scaleActu > currentMaxSizeS )	currentMaxSizeS = lineHeight*scaleActu;
+						if( currentMaxSizeS > realMaxSize )				realMaxSize 	= currentMaxSizeS;
+						
+						if( _emotesTxt )
 						{
-							// si l'emote est plus grand on descend tous les caracteres de la ligne
-							var dif:int = ( (char.height - realMaxSize) >> 1 )+2;
-							currentY += dif;
-							for( var a:int = 0; a<currentLine.length; ++a )
+							for( var e:int = 0; e<_emotesTxt.length; ++e )
 							{
-								currentLine[a].y += dif;
-							}
-							realMaxSize = char.height;
-						}
-					}
-					if( isEmote )	scaleActu = 1;
-					
-					// retour à la ligne
-					if( charID == CHAR_NEWLINE || charID == CHAR_CARRIAGE_RETURN )		lineFull = true;
-					else
-					{
-						// on enregistre le placement du dernier espace
-						if( charID == CHAR_SPACE || charID == CHAR_TAB || charID == CHAR_SLASH )	
-						{
-							lastWhiteSpace = i;
-							lastWhiteSpaceL = i-lineStart-emoteInLine;
-						}
-						// application du kerning si activé
-						if( kerning && lastCharID >= 0 ) 		currentX += char.getKerning(lastCharID)*scaleActu;
-						// ajouter le nombre de carateres pris par une emote 
-						if( isEmote )							emoteInLine += _emotesTxt[e].length-1;
-						
-						// créer un CharLocation ou le récupérer dans la pool
-						charLocation 			= CharLocation.instanceFromPool(char);
-						charLocation._lineHeight= lineHeight;
-						charLocation.style 		= styleActu;
-						charLocation.isEmote 	= isEmote;
-						charLocation.scale		= scaleActu;
-						charLocation.baseLine	= baseLine;
-						
-						// définir la position du caractère en x
-						charLocation.x 			= currentX + charLocation.xOffset;
-						// définir la position du caractère en y
-						charLocation.y 			= currentY + charLocation.yOffset;
-						// si c'est un emote on ne teinte pas l'image
-						charLocation.doTint 	= !isEmote;
-						
-						// on ajoute le caractère au tableau
-						currentLine.push( charLocation );
-						
-						// on met a jour la position x du prochain caractère si ce n'est pas le premier espace d'une ligne
-						if( currentLine.length != 1 || charID != CHAR_SPACE )	currentX += charLocation.xAdvance;
-						
-						// on enregistre le CharCode du caractère
-						lastCharID = charID;
-						
-						// fin de ligne car dépassement de la largeur du conteneur
-						if( charLocation.x + charLocation.width > width )
-						{
-							// tenter voir si on peut mettre le texte a la ligne
-							if( autoCR && (resizeQuad || currentY + 2*currentMaxSizeS + _lineSpacing <= height) )
-							{
-								// si autoscale est a true on ne doit pas couper le mot en 2
-								if( autoScale && lastWhiteSpace < 0 )		
+								if( text.charAt(i) == _emotesTxt[e].charAt(0) && text.substr(i,_emotesTxt[e].length) == _emotesTxt[e] )
 								{
-									if( resizeQuad )	
-									{
-										if( width >= maxWidth )		goto ignore;
-										goto suite;
-									}
-									else if( !_reduceSizes(fontSizes, minFontSize) )	
-									{
-										goto ignore;
-									}
+									char = _emotesTextures[e];
+									i += _emotesTxt[e].length-1;
+									isEmote = true;
 									break;
 								}
-								
-								ignore:
-								
-								// si c'est un emote on retourne au debut de l'emote avant de couper
-								if( isEmote )			i -= _emotesTxt[e].length-1;
-								
-								if( lastWhiteSpace >= 0 && lastWhiteSpaceL >= 0 )
+							}
+							if( isEmote && char.height > realMaxSize )
+							{
+								// si l'emote est plus grand on descend tous les caracteres de la ligne
+								var dif:int = ( (char.height - realMaxSize) >> 1 )+2;
+								currentY += dif;
+								for( var a:int = 0; a<currentLine.length; ++a )
 								{
-									// si on a eu un espace on va couper apres le dernier espace sinon on coupe à lindex actuel
-									var numCharsToRemove	:int = currentLine.length - lastWhiteSpaceL+1; //i - lastWhiteSpace + 1;
-									var removeIndex			:int = lastWhiteSpaceL + 1; //lastWhiteSpace+1;//currentLine.length - numCharsToRemove + 1;
-									
-									// couper la ligne
-									var temp:Vector.<CharLocation> = CharLocation.vectorFromPool();
-									var l:int = currentLine.length;
-									
-									for( var t:int = 0; t<l; ++t )
+									currentLine[a].y += dif;
+								}
+								realMaxSize = char.height;
+							}
+						}
+						if( isEmote )	scaleActu = 1;
+						
+						// retour à la ligne
+						if( charID == CHAR_NEWLINE || charID == CHAR_CARRIAGE_RETURN )		lineFull = true;
+						else
+						{
+							// on enregistre le placement du dernier espace
+							if( charID == CHAR_SPACE || charID == CHAR_TAB || charID == CHAR_SLASH )	
+							{
+								lastWhiteSpace = i;
+								lastWhiteSpaceL = i-lineStart-emoteInLine;
+							}
+							// application du kerning si activé
+							if( kerning && lastCharID >= 0 ) 		currentX += char.getKerning(lastCharID)*scaleActu;
+							// ajouter le nombre de carateres pris par une emote 
+							if( isEmote )							emoteInLine += _emotesTxt[e].length-1;
+							
+							// créer un CharLocation ou le récupérer dans la pool
+							charLocation 			= CharLocation.instanceFromPool(char);
+							charLocation._lineHeight= lineHeight;
+							charLocation.style 		= styleActu;
+							charLocation.isEmote 	= isEmote;
+							charLocation.scale		= scaleActu;
+							charLocation.baseLine	= baseLine;
+							
+							// définir la position du caractère en x
+							charLocation.x 			= currentX + charLocation.xOffset;
+							// définir la position du caractère en y
+							charLocation.y 			= currentY + charLocation.yOffset;
+							// si c'est un emote on ne teinte pas l'image
+							charLocation.doTint 	= !isEmote;
+							
+							// on ajoute le caractère au tableau
+							currentLine.push( charLocation );
+							
+							// on met a jour la position x du prochain caractère si ce n'est pas le premier espace d'une ligne
+							if( currentLine.length != 1 || charID != CHAR_SPACE )	currentX += charLocation.xAdvance;
+							
+							// on enregistre le CharCode du caractère
+							lastCharID = charID;
+							
+							// fin de ligne car dépassement de la largeur du conteneur
+							if( charLocation.x + charLocation.width > width )
+							{
+								// tenter voir si on peut mettre le texte a la ligne
+								if( autoCR && (resizeQuad || currentY + 2*currentMaxSizeS + _lineSpacing <= height) )
+								{
+									// si autoscale est a true on ne doit pas couper le mot en 2
+									if( autoScale && lastWhiteSpace < 0 )		
 									{
-										if( t < removeIndex || t >= removeIndex+numCharsToRemove )	temp.push( currentLine[t] );
-									}
-									
-									// il faut baisser la taille de la font -> on arrete la
-									if( temp.length == 0 )	
-									{
-										if( resizeQuad )	goto suite;
-										_reduceSizes(fontSizes, minFontSize);
+										if( resizeQuad )	
+										{
+											if( width >= maxWidth )		goto ignore;
+											else
+											{
+												width = charLocation.x + charLocation.width <= maxWidth ? charLocation.x + charLocation.width : maxWidth;
+												break;
+												//goto suite;
+											}
+										}
+										else if( !_reduceSizes(fontSizes, minFontSize) )	
+										{
+											goto ignore;
+										}
 										break;
 									}
-									currentLine = temp;
-									i = lastWhiteSpace;
+									
+									ignore:
+									
+									// si c'est un emote on retourne au debut de l'emote avant de couper
+									if( isEmote )			i -= _emotesTxt[e].length-1;
+									
+									if( lastWhiteSpace >= 0 && lastWhiteSpaceL >= 0 )
+									{
+										// si on a eu un espace on va couper apres le dernier espace sinon on coupe à lindex actuel
+										var numCharsToRemove	:int = currentLine.length - lastWhiteSpaceL+1; //i - lastWhiteSpace + 1;
+										var removeIndex			:int = lastWhiteSpaceL + 1; //lastWhiteSpace+1;//currentLine.length - numCharsToRemove + 1;
+										
+										// couper la ligne
+										var temp:Vector.<CharLocation> = CharLocation.vectorFromPool();
+										var l:int = currentLine.length;
+										
+										for( var t:int = 0; t<l; ++t )
+										{
+											if( t < removeIndex || t >= removeIndex+numCharsToRemove )	temp.push( currentLine[t] );
+										}
+										
+										// il faut baisser la taille de la font -> on arrete la
+										if( temp.length == 0 )	
+										{
+											if( resizeQuad )	goto suite;
+											_reduceSizes(fontSizes, minFontSize);
+											break;
+										}
+										currentLine = temp;
+										i = lastWhiteSpace;
+									}
+									
+									lineFull = true;
+									// si le prochain caractere est un saut de ligne, on l'ignore
+									if( text.charCodeAt(i+1) == CHAR_CARRIAGE_RETURN || text.charCodeAt(i+1) == CHAR_NEWLINE )	
+									{
+										++i;
+									}
 								}
-								
-								lineFull = true;
-								// si le prochain caractere est un saut de ligne, on l'ignore
-								if( text.charCodeAt(i+1) == CHAR_CARRIAGE_RETURN || text.charCodeAt(i+1) == CHAR_NEWLINE )	
+								else
 								{
-									++i;
+									_reduceSizes(fontSizes, minFontSize);
+									break;
 								}
+							}
+							
+						}
+						
+						suite:
+						
+						// fin du texte
+						if( i == numChars - 1 )
+						{
+							lines.push( currentLine );
+							linesSizes.push( currentMaxSize );
+							baselines.push( currentMaxBase );
+							//currentMaxSize = 0;
+							finished = true;
+						}
+							// fin de ligne
+						else if( lineFull )
+						{
+							/*if( resizeQuad && charLocation.x + charLocation.width > width )
+							{
+							if( width < maxWidth )
+							{
+							if( text.charAt(0) == '|' )	
+							{
+							trace( 'HTMLTextField:: on peut agrandir en largeur : ', i, text.charAt(i));
+							}
+							width = charLocation.x + charLocation.width <= maxWidth ? charLocation.x + charLocation.width : maxWidth;
+							break;
+							}
+							}*/
+							
+							currentLine.push(null);
+							lines.push( currentLine );
+							linesSizes.push( currentMaxSize );
+							baselines.push( currentMaxBase );
+							
+							// on a la place de mettre une nouvelle ligne
+							if( resizeQuad || currentY + 2*currentMaxSizeS + _lineSpacing <= height )
+							{
+								// créer un tableau pour la nouvelle ligne
+								currentLine = CharLocation.vectorFromPool();
+								// remettre le x à 0
+								currentX = 0;
+								// mettre le y à la prochaine ligne
+								currentY += realMaxSize+_lineSpacing;
+								// reset lastWhiteSpace index
+								lastWhiteSpace = -1;
+								lastWhiteSpaceL = -1;
+								emoteInLine = 0;
+								lineStart = i+1;
+								// reset lastCharID vu que le kerning ne va pas s'appliquer entre 2 lignes
+								lastCharID = -1;
+								// reset la taille max pour la ligne
+								currentMaxSizeS = currentMaxBase = realMaxSize = 0;
+								currentMaxBase = 0;
 							}
 							else
 							{
+								// il faut baisser la taille de la font -> on arrete la
 								_reduceSizes(fontSizes, minFontSize);
+								//trace( 'pas de place pour une nouvelle ligne', text );
 								break;
 							}
 						}
-						
-					}
-					
-					suite:
-					
-					// fin du texte
-					if( i == numChars - 1 )
-					{
-						lines.push( currentLine );
-						linesSizes.push( currentMaxSize );
-						baselines.push( currentMaxBase );
-						//currentMaxSize = 0;
-						finished = true;
-					}
-						// fin de ligne
-					else if( lineFull )
-					{
-						if( resizeQuad && charLocation.x + charLocation.width > width )
-						{
-							if( width < maxWidth )
-							{
-								width = charLocation.x + charLocation.width <= maxWidth ? charLocation.x + charLocation.width : maxWidth;
-								break;
-							}
-						}
-						
-						currentLine.push(null);
-						lines.push( currentLine );
-						linesSizes.push( currentMaxSize );
-						baselines.push( currentMaxBase );
-						
-						// on a la place de mettre une nouvelle ligne
-						if( resizeQuad || currentY + 2*currentMaxSizeS + _lineSpacing <= height )
-						{
-							// créer un tableau pour la nouvelle ligne
-							currentLine = CharLocation.vectorFromPool();
-							// remettre le x à 0
-							currentX = 0;
-							// mettre le y à la prochaine ligne
-							currentY += realMaxSize+_lineSpacing;
-							// reset lastWhiteSpace index
-							lastWhiteSpace = -1;
-							lastWhiteSpaceL = -1;
-							emoteInLine = 0;
-							lineStart = i+1;
-							// reset lastCharID vu que le kerning ne va pas s'appliquer entre 2 lignes
-							lastCharID = -1;
-							// reset la taille max pour la ligne
-							currentMaxSizeS = currentMaxBase = realMaxSize = 0;
-							currentMaxBase = 0;
-						}
-						else
-						{
-							// il faut baisser la taille de la font -> on arrete la
-							_reduceSizes(fontSizes, minFontSize);
-							//trace( 'pas de place pour une nouvelle ligne', text );
-							break;
-						}
-					}
-				} // for each char
+					} // for each char
+				} // if( resizeQuad || biggestLineHeight <= containerHeight )
+				else
+				{
+					_reduceSizes(fontSizes, minFontSize);
+				}
 				
 				// si l'autoscale est activé et que le texte ne rentre pas dans la zone spécifié, on réduit la taille de la police
 				if( (autoScale || (resizeQuad && width >= maxWidth)) && !finished && _reducedSizes )
@@ -843,6 +869,56 @@ package starling.extensions.HTMLBitmapFonts
 				return false;
 			}
 			return true; 
+		}
+		
+		/** return the biggest line height **/
+		[Inline]
+		private final function _getBiggestLineHeight( sizes:Array, styles:Array, len:int ):Number
+		{
+			// la valeur max à retourner
+			var max			:Number = 0;
+			// la taille de ligne pour le caractere actuel
+			var lineActu	:Number;
+			// la taille de font du caractere actuel
+			var sizeActu	:int;
+			// la style de font du caractere actuel
+			var styleActu	:int;
+			// le scale actuel
+			var scaleActu	:Number;
+			// l'index de size
+			var sizeIndex	:int;
+			
+			mSizeIndexes.length = 0;
+			mScales.length 		= 0;
+			mLineHeights.length = 0;
+			
+			// récupérer la taille du plus grand des tableaux
+			/*var len			:int = sizes.length;
+			if( styles.length > len )	len = styles.length;*/
+			
+			for( var i:int = 0; i<len; ++i )
+			{
+				// récupérer la taille actuelle
+				if( i < sizes.length )			sizeActu 	= sizes[i];
+				// récupérer le syle actuel
+				if( i < styles.length )			styleActu 	= styles[i];
+				
+				// style erroné on prend le stle de base
+				if( styleActu > BitmapFontStyle.NUM_STYLES || !mFontStyles[styleActu] )	styleActu = _baseStyle;
+				
+				// récupérer l'index de scale dans le tableau
+				mSizeIndexes[i] = sizeIndex = mFontStyles[styleActu].getBiggerOrEqualSizeIndex(sizeActu);
+				// calculer le scale actuel
+				mScales[i] 		= scaleActu = sizeActu / mFontStyles[styleActu].getSizeAtIndex(sizeIndex);
+				// récupérer la hauteur de ligne pour ce style et cette taille
+				mLineHeights[i] = lineActu 	= mFontStyles[styleActu].getLineHeightForSizeIndex(sizeIndex);
+				lineActu *= scaleActu;
+				// si la valeur est plus grande on met à jour max
+				if( lineActu > max )	max = lineActu;
+			}
+			
+			// retourner la valeur max
+			return max;
 		}
 		
 		/** The name of the font as it was parsed from the font file. */
