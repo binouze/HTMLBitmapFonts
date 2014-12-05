@@ -569,6 +569,7 @@ package starling.extensions.HTMLBitmapFonts
 		public function get text():String { return mText; }
 		public function set text(value:String):void
 		{
+			if( !value )			value = '';
 			if( mText == value )	return;
 			
 			if( mLinks )	mLinks.length = 0;
@@ -584,6 +585,7 @@ package starling.extensions.HTMLBitmapFonts
 		public function get htmlText():String { return mTextHTML; }
 		public function set htmlText(value:String):void
 		{
+			if( !value )				value = '';
 			if( mTextHTML == value )	return;
 			
 			if( mLinks )	mLinks.length = 0;
@@ -601,6 +603,14 @@ package starling.extensions.HTMLBitmapFonts
 		{
 			mText = '';
 			
+			// reset arrays
+			mSizes.length 	= 0;
+			mStyles.length 	= 0;
+			mColors.length 	= 0;
+			if( mLinks )	mLinks.length = 0;
+			
+			if( !mTextHTML )	return;
+			
 			// sauts de lignes
 			mTextHTML = mTextHTML.split( '<br>' ).join( String.fromCharCode(10) );
 			mTextHTML = mTextHTML.split( '<BR>' ).join( String.fromCharCode(10) );
@@ -609,12 +619,6 @@ package starling.extensions.HTMLBitmapFonts
 			mTextHTML = mTextHTML.split( '<br />' ).join( String.fromCharCode(10) );
 			mTextHTML = mTextHTML.split( '<BR />' ).join( String.fromCharCode(10) );
 			mTextHTML = mTextHTML.split( String.fromCharCode(149) ).join( String.fromCharCode(8226) );
-			
-			// reset arrays
-			mSizes.length 	= 0;
-			mStyles.length 	= 0;
-			mColors.length 	= 0;
-			if( mLinks )	mLinks.length = 0;
 			
 			var lastRealChar	:int = -1;
 			var isRealChar		:Boolean = false;
