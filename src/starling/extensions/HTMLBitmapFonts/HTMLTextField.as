@@ -838,13 +838,13 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// sauts de lignes
 			
-	/*		mTextHTML = mTextHTML.split( '<br>' ).join( String.fromCharCode(10) );
-	*		mTextHTML = mTextHTML.split( '<BR>' ).join( String.fromCharCode(10) );
-	*		mTextHTML = mTextHTML.split( '<br/>' ).join( String.fromCharCode(10) );
-	*		mTextHTML = mTextHTML.split( '<BR/>' ).join( String.fromCharCode(10) );
-	*		mTextHTML = mTextHTML.split( '<br />' ).join( String.fromCharCode(10) );
-	*		mTextHTML = mTextHTML.split( '<BR />' ).join( String.fromCharCode(10) );
-	*		mTextHTML = mTextHTML.split( String.fromCharCode(149) ).join( String.fromCharCode(8226) );*/
+			mTextHTML = mTextHTML.split( '<br>' ).join( String.fromCharCode(10) );
+			mTextHTML = mTextHTML.split( '<BR>' ).join( String.fromCharCode(10) );
+			mTextHTML = mTextHTML.split( '<br/>' ).join( String.fromCharCode(10) );
+			mTextHTML = mTextHTML.split( '<BR/>' ).join( String.fromCharCode(10) );
+			mTextHTML = mTextHTML.split( '<br />' ).join( String.fromCharCode(10) );
+			mTextHTML = mTextHTML.split( '<BR />' ).join( String.fromCharCode(10) );
+			mTextHTML = mTextHTML.split( String.fromCharCode(149) ).join( String.fromCharCode(8226) );
 			
 			var lastRealChar	:int = -1;
 			var isRealChar		:Boolean = false;
