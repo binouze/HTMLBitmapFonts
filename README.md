@@ -36,9 +36,8 @@ ACCEPTED TAGS:
 
 <i>HTMLTextField uses HTMLBitmapFonts instead of the tradtional BitmapFont.</i>
 
-* **ADDED DEVICE FONTS SUPPORT :**
 ___
-New Device fonts support:
+Device fonts support:
 -------------------------
 
 * You can use a list of fonts to use the device font by default using the static var `HTMLTextField.$useDeviceFontsForFontNames`.
@@ -94,7 +93,9 @@ Other things:
 * Added left centered and right centered horizontal alignements rules, use <code>HTMLTextField.LEFT_CENTERED</code> and <code>HTMLTextField.RIGHT_CENTERED</code>.
 * You can easily make shadows on the text by setting <code>shadowX</code>, <code>shadowY</code> and <code>shadowColor</code> vars.
 * You can limit the min font size when <code>autoScale</code> is <code>true</code> with the <code>minFontSize</code> var.
-* You can override the coloring behaviour for the emotes by using <code>colorizeEmotes</code> it's default to <code>false</code>
+* You can override the coloring behaviour for the emotes by using <code>colorizeEmotes</code> it's default to <code>false</code>.
+* You can set to ignore the emote in first and last position for the horizontal centering of the text by setting <code>ignoreEmotesForAlign</code> to <code>true</code>.
+
 ___
 Warnings:
 -------------
