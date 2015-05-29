@@ -77,10 +77,9 @@ package starling.extensions.HTMLBitmapFonts
 		private static var sInstanceLoan:Vector.<CharLocation> = new <CharLocation>[];
 		private static var sVectorLoan:Array = [];
 		
-		public static function instanceFromPool(char:BitmapChar):CharLocation
+		public static function instanceFromPool( char:BitmapChar ):CharLocation
 		{
-			var instance:CharLocation = sInstancePool.length > 0 ?
-				sInstancePool.pop() : new CharLocation(char);
+			var instance:CharLocation = sInstancePool.length > 0 ? sInstancePool.pop() : new CharLocation(char);
 			
 			instance.reset(char);
 			sInstanceLoan[sInstanceLoan.length] = instance;
@@ -90,8 +89,7 @@ package starling.extensions.HTMLBitmapFonts
 		
 		public static function vectorFromPool():Vector.<CharLocation>
 		{
-			var vector:Vector.<CharLocation> = sVectorPool.length > 0 ?
-				sVectorPool.pop() : new <CharLocation>[];
+			var vector:Vector.<CharLocation> = sVectorPool.length > 0 ? sVectorPool.pop() : new <CharLocation>[];
 			
 			vector.length = 0;
 			sVectorLoan[sVectorLoan.length] = vector;
@@ -101,21 +99,27 @@ package starling.extensions.HTMLBitmapFonts
 		
 		public static function rechargePool():void
 		{
-			var instance:CharLocation;
-			var vector:Vector.<CharLocation>;
+			var instance	:CharLocation;
+			var vector		:Vector.<CharLocation>;
+			var instanceLen	:int = sInstancePool.length;
+			var vectorLen	:int = sVectorPool.length;
 			
-			while (sInstanceLoan.length > 0)
+			while( sInstanceLoan.length > 0 )
 			{
 				instance = sInstanceLoan.pop();
 				instance.char = null;
-				sInstancePool[sInstancePool.length] = instance;
+				
+				if( instanceLen < 300 )
+					sInstancePool[instanceLen++] = instance;
 			}
 			
-			while (sVectorLoan.length > 0)
+			while( sVectorLoan.length > 0 )
 			{
 				vector = sVectorLoan.pop();
 				vector.length = 0;
-				sVectorPool[sVectorPool.length] = vector;
+				
+				if( vectorLen < 300 )
+					sVectorPool[vectorLen++] = vector;
 			}
 		}
 		
@@ -138,15 +142,25 @@ package starling.extensions.HTMLBitmapFonts
 		public static function returnVector( retour:Vector.<CharLocation> ):void
 		{
 			retour.fixed = false;
-			var instance:CharLocation;
+			var instance	:CharLocation;
+			var instanceLen	:int = sInstancePool.length;
+			var vectorLen	:int = sVectorPool.length;
+			
 			while( retour.length > 0 )
 			{
 				instance 		= retour.pop();
 				instance.char 	= null;
-				sInstancePool[sInstancePool.length] = instance;
+				
+				if( instanceLen < 300 )
+					sInstancePool[instanceLen++] = instance;
+				//sInstancePool[sInstancePool.length] = instance;
 			}
+			
 			retour.length = 0;
-			sVectorPool[sVectorPool.length] = retour;
+			
+			if( vectorLen < 300 )
+				sVectorPool[vectorLen++] = retour;
+			//sVectorPool[sVectorPool.length] = retour;
 		}
 	}
 }

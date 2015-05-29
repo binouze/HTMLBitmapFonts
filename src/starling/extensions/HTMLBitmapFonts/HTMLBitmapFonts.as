@@ -5,6 +5,7 @@ package starling.extensions.HTMLBitmapFonts
 	import starling.text.BitmapChar;
 	import starling.textures.Texture;
 	import starling.utils.HAlign;
+	import starling.utils.VAlign;
 	
 	/** 
 	 * This class is used by HTMLTextField
@@ -17,18 +18,18 @@ package starling.extensions.HTMLBitmapFonts
 	 *
 	 * <listing>
 	 &lt;font&gt;
-	 &lt;info face="BranchingMouse" size="40" /&gt;
-	 &lt;common lineHeight="40" /&gt;
-	 &lt;pages&gt; &lt;!-- currently, only one page is supported --&gt;
-	 &lt;page id="0" file="texture.png" /&gt;
-	 &lt;/pages&gt;
-	 &lt;chars&gt;
-	 &lt;char id="32" x="60" y="29" width="1" height="1" xoffset="0" yoffset="27" xadvance="8" /&gt;
-	 &lt;char id="33" x="155" y="144" width="9" height="21" xoffset="0" yoffset="6" xadvance="9" /&gt;
-	 &lt;/chars&gt;
-	 &lt;kernings&gt; &lt;!-- Kerning is optional --&gt;
-	 &lt;kerning first="83" second="83" amount="-4"/&gt;
-	 &lt;/kernings&gt;
+		 &lt;info face="BranchingMouse" size="40" /&gt;
+		 &lt;common lineHeight="40" /&gt;
+		 &lt;pages&gt; &lt;!-- currently, only one page is supported --&gt;
+			 &lt;page id="0" file="texture.png" /&gt;
+		 &lt;/pages&gt;
+		 &lt;chars&gt;
+			 &lt;char id="32" x="60" y="29" width="1" height="1" xoffset="0" yoffset="27" xadvance="8" /&gt;
+		 	&lt;char id="33" x="155" y="144" width="9" height="21" xoffset="0" yoffset="6" xadvance="9" /&gt;
+		 &lt;/chars&gt;
+		 &lt;kernings&gt; &lt;!-- Kerning is optional --&gt;
+		 	&lt;kerning first="83" second="83" amount="-4"/&gt;
+		 &lt;/kernings&gt;
 	 &lt;/font&gt;
 	 * </listing>
 	 * 
@@ -38,18 +39,18 @@ package starling.extensions.HTMLBitmapFonts
 	 * 
 	 else if( rootNode == "font" )
 	 {
-	 name 	= xml.info.&#64;face.toString();
-	 fileName 	= getName(xml.pages.page.&#64;file.toString());
-	 isBold 	= xml.info.&#64;bold == 1;
-	 isItalic 	= xml.info.&#64;italic == 1;
-	 
-	 log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
-	 
-	 fontTexture = getTexture( fileName );
-	 HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.&#64;size, isBold, isItalic, name.toLowerCase() );
-	 removeTexture( fileName, false );
-	 
-	 mLoadedHTMLFonts.push( name.toLowerCase() );
+		 name 	= xml.info.&#64;face.toString();
+		 fileName 	= getName(xml.pages.page.&#64;file.toString());
+		 isBold 	= xml.info.&#64;bold == 1;
+		 isItalic 	= xml.info.&#64;italic == 1;
+		 
+		 log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
+		 
+		 fontTexture = getTexture( fileName );
+		 HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.&#64;size, isBold, isItalic, name.toLowerCase() );
+		 removeTexture( fileName, false );
+		 
+		 mLoadedHTMLFonts.push( name.toLowerCase() );
 	 }
 	 * </listing>
 	 */ 
@@ -57,8 +58,8 @@ package starling.extensions.HTMLBitmapFonts
 	{
 		// -- you can register emotes here --//
 		
-		private static var _emotesTxt				:Vector.<String>;
-		private static var _emotesTextures			:Vector.<BitmapChar>;
+		protected static var _emotesTxt				:Vector.<String>;
+		protected static var _emotesTextures		:Vector.<BitmapChar>;
 		/** 
 		 * Register emote shortcut and the texture associated 
 		 * @param shortcut the shortcut of the emote
@@ -69,6 +70,7 @@ package starling.extensions.HTMLBitmapFonts
 		 **/
 		public static function registerEmote( shortcut:String, texture:Texture, xOffset:int = 0, yOffset:int = 0, xAdvance:int = -1, margins:int = 5 ):void
 		{
+			if( !texture )	return;
 			if( !_emotesTxt )
 			{
 				_emotesTxt 		= new Vector.<String>();
@@ -90,41 +92,41 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** space char **/
-		private static const CHAR_SPACE				:int = 32;
+		protected static const CHAR_SPACE			:int = 32;
 		/** tab char **/
-		private static const CHAR_TAB				:int =  9;
+		protected static const CHAR_TAB				:int =  9;
 		/** new line char **/
-		private static const CHAR_NEWLINE			:int = 10;
+		protected static const CHAR_NEWLINE			:int = 10;
 		/** cariage return char **/
-		private static const CHAR_CARRIAGE_RETURN	:int = 13;
+		protected static const CHAR_CARRIAGE_RETURN	:int = 13;
 		/** char slash (for urls) **/
-		private static const CHAR_SLASH				:int = 47;
+		protected static const CHAR_SLASH			:int = 47;
 		
 		/** the base style for the font: the first added style **/
-		private var _baseStyle						:int = -1;
+		protected var _baseStyle					:int = -1;
 		/** the base size for the font: the fisrt size added **/
-		private var _baseSize						:int = -1;
+		protected var _baseSize						:int = -1;
 		
 		/** the font styles **/
-		private var mFontStyles						:Vector.<BitmapFontStyle>;
+		protected var mFontStyles					:Vector.<BitmapFontStyle>;
 		/** font name **/
-		private var mName							:String;
+		protected var mName							:String;
 		/** an helper image to construct the textField **/
-		private var mHelperImage					:Image;
+		protected static var mHelperImage			:Image;
 		
 		/** the vector used for the lines **/
-		private static var lines					:Vector.< Vector.<CharLocation> >;
+		protected static var lines					:Vector.< Vector.<CharLocation> >;
 		/** the vector for the line sizes **/
-		private static var linesSizes				:Vector.<Number>;
+		protected static var linesSizes				:Vector.<Number>;
 		/** the vector for the baselines **/
-		private static var baselines				:Vector.<Number>;
+		//private static var baselines				:Vector.<Number>;
 		
-		private static var mSizeIndexes				:Vector.<int>;
-		private static var mScales					:Vector.<Number>;
-		private static var mLineHeights				:Vector.<Number>;
+		protected static var mSizeIndexes			:Vector.<int>;
+		protected static var mScales				:Vector.<Number>;
+		protected static var mLineHeights			:Vector.<Number>;
 		
 		/** the underline texture **/
-		private static var _underlineTexture		:Texture;
+		protected static var _underlineTexture		:Texture;
 		/** define the texture to use for underlines **/
 		public static function set underlineTexture(value:Texture):void
 		{
@@ -137,16 +139,21 @@ package starling.extensions.HTMLBitmapFonts
 		 **/
 		public function HTMLBitmapFonts( name:String )
 		{
+			// définir le nom de la font
+			mName 				= name;
+			
 			// créer les tableaux statiques si ils n'existent pas encore
 			if( !lines )				lines 				= new <Vector.<CharLocation>>[];
 			if( !linesSizes )			linesSizes			= new <Number>[];
-			if( !baselines )			baselines			= new <Number>[];
 			if( !mSizeIndexes )			mSizeIndexes		= new <int>[];
 			if( !mScales )				mScales				= new <Number>[];
 			if( !mLineHeights )			mLineHeights		= new <Number>[];
 			
-			// définir le nom de la font
-			mName 				= name;
+			_init();
+		}
+		
+		protected function _init():void
+		{
 			// créer le tableau contenant les style de fonts
 			mFontStyles 		= new Vector.<BitmapFontStyle>( BitmapFontStyle.NUM_STYLES, true );
 		}
@@ -188,7 +195,7 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// créer le BitmapFontStyle pour le style si il n'existe pas encore
 			if( !mFontStyles[index] )	mFontStyles[index] = new BitmapFontStyle( index, textures, fontsXml, sizes );
-				// ajouter les tailles de font au BitmapFontStyle
+			// ajouter les tailles de font au BitmapFontStyle
 			else						mFontStyles[index].addMultipleSizes( textures, fontsXml, sizes );
 			
 			// si le helperImage n'existe pas encore on le crée
@@ -217,7 +224,7 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// créer le BitmapFontStyle pour le style si il n'existe pas encore
 			if( !mFontStyles[index] )	mFontStyles[index] = new BitmapFontStyle( index, new <Texture>[texture], new <XML>[xml], new <Number>[size] );
-				// ajouter la taille de font au BitmapFontStyle
+			// ajouter la taille de font au BitmapFontStyle
 			else						mFontStyles[index].add( texture, xml, size );
 			
 			// si le helperImage n'existe pas encore on le crée
@@ -264,7 +271,8 @@ package starling.extensions.HTMLBitmapFonts
 									  fontSizes:Array = null, styles:Array = null, colors:Array = null, underlines:Array = null,
 									  hAlign:String="center", vAlign:String="center", autoScale:Boolean=true, 
 									  kerning:Boolean=true, resizeQuad:Boolean = false, keepDatas:Object = null, 
-									  autoCR:Boolean = true, maxWidth:int = 900, hideEmotes:Boolean = false, minFontSize:int = 10 ):void
+									  autoCR:Boolean = true, maxWidth:int = 900, hideEmotes:Boolean = false, minFontSize:int = 10, 
+									  isShadow:Boolean = false, colorizeEmotes:Boolean = false, ignoreEmotesForAlign:Boolean = false ):void
 		{
 			// découper le tableau de couleur pour ignorer les caracteres à remplacer par des emotes
 			if( _emotesTxt )
@@ -291,7 +299,7 @@ package starling.extensions.HTMLBitmapFonts
 			}
 			
 			// générer le tableau de CharLocation
-			var charLocations	:Vector.<CharLocation> 	= arrangeChars( width, height, text, fontSizes.concat(), styles.concat(), hAlign, vAlign, autoScale, kerning, resizeQuad, autoCR, maxWidth, minFontSize );
+			var charLocations	:Vector.<CharLocation> 	= arrangeChars( width, height, text, fontSizes.concat(), styles.concat(), hAlign, vAlign, autoScale, kerning, resizeQuad, autoCR, maxWidth, minFontSize, ignoreEmotesForAlign );
 			
 			// cas foireux pour le texte qui apparait mots à mots
 			if( keepDatas )			keepDatas.loc = CharLocation.cloneVector( charLocations );
@@ -327,7 +335,7 @@ package starling.extensions.HTMLBitmapFonts
 					continue;
 				}
 				
-				if( charLocations[i].doTint )
+				if( isShadow || !charLocations[i].isEmote || colorizeEmotes )
 				{
 					// récupérer la couleur du caractère et colorer l'image
 					if( i < colors.length )
@@ -423,11 +431,11 @@ package starling.extensions.HTMLBitmapFonts
 		
 		/** Arranges the characters of a text inside a rectangle, adhering to the given settings. 
 		 *  Returns a Vector of CharLocations. */
-		private function arrangeChars( width:Number, height:Number, text:String, 
+		protected function arrangeChars( width:Number, height:Number, text:String, 
 									   fontSizes:Array = null, styles:Array = null, 
 									   hAlign:String="center", vAlign:String="center", 
 									   autoScale:Boolean=true, kerning:Boolean=true, resizeQuad:Boolean = false, 
-									   autoCR:Boolean = true, maxWidth:int = 900, minFontSize:int = 10 ):Vector.<CharLocation>
+									   autoCR:Boolean = true, maxWidth:int = 900, minFontSize:int = 10, ignoreEmotesForAlign:Boolean = false ):Vector.<CharLocation>
 		{
 			// si pas de texte on renvoi un tableau vide
 			if( text == null || text.length == 0 ) 		return CharLocation.vectorFromPool();
@@ -459,7 +467,7 @@ package starling.extensions.HTMLBitmapFonts
 				// init/reset le tableau de lignes
 				lines.length 		= 0;
 				linesSizes.length 	= 0;
-				baselines.length 	= 0;
+				//baselines.length 	= 0;
 				
 				// récuperer la hauteur du plus haut caractere savoir si il rentre dans la zone ou pas
 				biggestLineHeight 	= Math.ceil( _getBiggestLineHeight( fontSizes, styles, text.length ) );
@@ -481,6 +489,9 @@ package starling.extensions.HTMLBitmapFonts
 					var lineHeight		:Number;
 					var baseLine		:Number;
 					var currentMaxBase	:Number 	= 0;
+					var currentMaxBaseS	:Number 	= 0;
+					// le départ en y
+					var baseY			:Number 	= 0;
 					// reset reduced sizes
 					_reducedSizes 		= null;
 					
@@ -508,7 +519,7 @@ package starling.extensions.HTMLBitmapFonts
 						// le caractère n'est pas disponible, on remplace par un espace
 						if( char == null )
 						{
-							if( charID != CHAR_NEWLINE && charID != CHAR_CARRIAGE_RETURN )	charID = CHAR_SPACE;
+							if( charID != CHAR_NEWLINE && charID != CHAR_CARRIAGE_RETURN && charID != CHAR_TAB )	charID = CHAR_SPACE;
 							char = mFontStyles[styleActu].getChar( CHAR_SPACE, sizeIndex );
 						}
 						
@@ -518,6 +529,7 @@ package starling.extensions.HTMLBitmapFonts
 						baseLine 		= mFontStyles[styleActu].getBaseLine(sizeIndex)
 						
 						if( baseLine > currentMaxBase )					currentMaxBase 	= baseLine;
+						if( baseLine*scaleActu > currentMaxBaseS )		currentMaxBaseS = baseLine*scaleActu;
 						if( lineHeight > currentMaxSize )				currentMaxSize 	= lineHeight;
 						if( lineHeight*scaleActu > currentMaxSizeS )	currentMaxSizeS = lineHeight*scaleActu;
 						if( currentMaxSizeS > realMaxSize )				realMaxSize 	= currentMaxSizeS;
@@ -553,7 +565,7 @@ package starling.extensions.HTMLBitmapFonts
 						else
 						{
 							// on enregistre le placement du dernier espace
-							if( charID == CHAR_SPACE || charID == CHAR_TAB || charID == CHAR_SLASH )	
+							if( charID == CHAR_SPACE /*|| charID == CHAR_TAB*/ || charID == CHAR_SLASH )	
 							{
 								lastWhiteSpace = i;
 								lastWhiteSpaceL = i-lineStart-emoteInLine;
@@ -576,13 +588,17 @@ package starling.extensions.HTMLBitmapFonts
 							// définir la position du caractère en y
 							charLocation.y 			= currentY + charLocation.yOffset;
 							// si c'est un emote on ne teinte pas l'image
-							charLocation.doTint 	= !isEmote;
+							charLocation.doTint 	= true;//!isEmote;
 							
 							// on ajoute le caractère au tableau
 							currentLine.push( charLocation );
 							
 							// on met a jour la position x du prochain caractère si ce n'est pas le premier espace d'une ligne
-							if( currentLine.length != 1 || charID != CHAR_SPACE )	currentX += charLocation.xAdvance;
+							if( currentLine.length != 1 || charID != CHAR_SPACE )	
+							{
+								currentX += charLocation.xAdvance;
+								//if( charID == CHAR_TAB )	currentX += charLocation.xAdvance;	// 2 espaces pour un tab
+							}
 							
 							// on enregistre le CharCode du caractère
 							lastCharID = charID;
@@ -606,7 +622,7 @@ package starling.extensions.HTMLBitmapFonts
 												//goto suite;
 											}
 										}
-										else if( !_reduceSizes(fontSizes, minFontSize) )	
+										else if( !_reduceSizes(fontSizes, minFontSize, text) )	
 										{
 											goto ignore;
 										}
@@ -621,8 +637,8 @@ package starling.extensions.HTMLBitmapFonts
 									if( lastWhiteSpace >= 0 && lastWhiteSpaceL >= 0 )
 									{
 										// si on a eu un espace on va couper apres le dernier espace sinon on coupe à lindex actuel
-										var numCharsToRemove	:int = currentLine.length - lastWhiteSpaceL+1; //i - lastWhiteSpace + 1;
-										var removeIndex			:int = lastWhiteSpaceL + 1; //lastWhiteSpace+1;//currentLine.length - numCharsToRemove + 1;
+										var numCharsToRemove	:int = currentLine.length - lastWhiteSpaceL;//+1; //i - lastWhiteSpace + 1;
+										var removeIndex			:int = lastWhiteSpaceL;// + 1; //lastWhiteSpace+1;//currentLine.length - numCharsToRemove + 1;
 										
 										// couper la ligne
 										var temp:Vector.<CharLocation> = CharLocation.vectorFromPool();
@@ -637,11 +653,11 @@ package starling.extensions.HTMLBitmapFonts
 										if( temp.length == 0 )	
 										{
 											if( resizeQuad )	goto suite;
-											_reduceSizes(fontSizes, minFontSize);
+											_reduceSizes(fontSizes, minFontSize, text);
 											break;
 										}
 										currentLine = temp;
-										i = lastWhiteSpace;
+										i = lastWhiteSpace-1;
 									}
 									
 									lineFull = true;
@@ -653,7 +669,7 @@ package starling.extensions.HTMLBitmapFonts
 								}
 								else
 								{
-									_reduceSizes(fontSizes, minFontSize);
+									_reduceSizes(fontSizes, minFontSize, text);
 									break;
 								}
 							}
@@ -667,34 +683,22 @@ package starling.extensions.HTMLBitmapFonts
 						{
 							lines.push( currentLine );
 							linesSizes.push( currentMaxSize );
-							baselines.push( currentMaxBase );
+							//baselines.push( currentMaxBase );
 							//currentMaxSize = 0;
 							finished = true;
 						}
-							// fin de ligne
+						// fin de ligne
 						else if( lineFull )
 						{
-							/*if( resizeQuad && charLocation.x + charLocation.width > width )
-							{
-							if( width < maxWidth )
-							{
-							if( text.charAt(0) == '|' )	
-							{
-							trace( 'HTMLTextField:: on peut agrandir en largeur : ', i, text.charAt(i));
-							}
-							width = charLocation.x + charLocation.width <= maxWidth ? charLocation.x + charLocation.width : maxWidth;
-							break;
-							}
-							}*/
-							
 							currentLine.push(null);
 							lines.push( currentLine );
-							linesSizes.push( currentMaxSize );
-							baselines.push( currentMaxBase );
+							linesSizes.push( currentMaxSizeS );
+							//baselines.push( currentMaxBase );
 							
 							// on a la place de mettre une nouvelle ligne
 							if( resizeQuad || currentY + 2*currentMaxSizeS + _lineSpacing <= height )
 							{
+								if( currentY == 0 )		baseY = currentMaxBaseS;
 								// créer un tableau pour la nouvelle ligne
 								currentLine = CharLocation.vectorFromPool();
 								// remettre le x à 0
@@ -715,8 +719,7 @@ package starling.extensions.HTMLBitmapFonts
 							else
 							{
 								// il faut baisser la taille de la font -> on arrete la
-								_reduceSizes(fontSizes, minFontSize);
-								//trace( 'pas de place pour une nouvelle ligne', text );
+								_reduceSizes(fontSizes, minFontSize, text);
 								break;
 							}
 						}
@@ -724,7 +727,7 @@ package starling.extensions.HTMLBitmapFonts
 				} // if( resizeQuad || biggestLineHeight <= containerHeight )
 				else
 				{
-					_reduceSizes(fontSizes, minFontSize);
+					_reduceSizes(fontSizes, minFontSize, text);
 				}
 				
 				// si l'autoscale est activé et que le texte ne rentre pas dans la zone spécifié, on réduit la taille de la police
@@ -742,24 +745,31 @@ package starling.extensions.HTMLBitmapFonts
 						// supprimer le dernier caractere vu que si on est ici c'est qu'il passait pas 
 						currentLine.pop();
 						lines.push( currentLine );
-						linesSizes.push( currentMaxSize );
-						baselines.push( currentMaxBase );
+						linesSizes.push( currentMaxSizeS );
+						//baselines.push( currentMaxBase );
 					}
 				}
 			} // while (!finished)
 			
 			// le tableau de positionnement final des caractères
-			var finalLocations	:Vector.<CharLocation> 	= CharLocation.vectorFromPool();//new <CharLocation>[];
+ 			var finalLocations	:Vector.<CharLocation> 	= CharLocation.vectorFromPool();
 			// le nombre de lignes
 			var numLines		:int 					= lines.length;
 			// le y max du texte
-			var bottom			:Number 				= currentY + currentMaxSize;//biggestLineHeight;
+			var bottom			:Number 				= currentY + currentMaxSizeS;
 			// l'offset y
 			var yOffset			:int 					= 0;
 			// la ligne à traiter
 			var line			:Vector.<CharLocation>;
 			// un j
-			var j:int;
+			var j				:int;
+			
+			if( baseY == 0 )	baseY = currentMaxBaseS;
+			
+			if( vAlign == VAlign.TOP )      			yOffset 	= baseY;
+			else if( vAlign == VAlign.BOTTOM )  		yOffset 	= baseY + (height-bottom);
+			else if( vAlign == VAlign.CENTER ) 			yOffset 	= baseY + (height-bottom)/2;
+			if( yOffset < 0 )							yOffset 	= 0;
 			
 			// la taille de la ligne la plus longue utile pour les LEFT_CENTERED et RIGHT_CENTERED
 			var longestLineWidth:Number = 0;
@@ -779,6 +789,8 @@ package starling.extensions.HTMLBitmapFonts
 					{
 						if( !lines[i][j] || lines[i][j].char.charID == CHAR_SPACE )		continue;
 						
+						if( ignoreEmotesForAlign && lines[i][j].isEmote )				continue;
+						
 						if( lines[i][j].x+lines[i][j].width > longestLineWidth )	
 							longestLineWidth = lines[i][j].x + lines[i][j].width;
 						
@@ -788,6 +800,30 @@ package starling.extensions.HTMLBitmapFonts
 			}
 			
 			var c:int, xOffset:int, right:Number, lastLocation:CharLocation;
+			
+			var xOffsetEmote:int = 0;
+			if( ignoreEmotesForAlign )
+			{
+				for( var z:int = 0; z<numLines; ++z )
+				{
+					var xOffsetEmoteLine:int = 0;
+					line = lines[z];
+					j = 1;
+					lastLocation = null;//line[line.length-j];
+					while( lastLocation == null && line.length-j >= 0)
+					{
+						lastLocation = line[line.length-j++];
+						if( ignoreEmotesForAlign && lastLocation && lastLocation.isEmote ) 
+						{
+							xOffsetEmoteLine += lastLocation.width;
+							lastLocation = null;
+						}
+					}
+					
+					if( xOffsetEmoteLine > xOffsetEmote )	xOffsetEmote = xOffsetEmoteLine;
+				}
+			}
+			
 			// parcourir les lignes
 			for( var lineID:int=0; lineID<numLines; ++lineID )
 			{
@@ -803,10 +839,14 @@ package starling.extensions.HTMLBitmapFonts
 				xOffset	= 0;
 				// la position du dernier caractère de la ligne
 				j = 1;
-				lastLocation = line[line.length-j];
+				lastLocation = null;//line[line.length-j];
 				while( lastLocation == null && line.length-j >= 0)
 				{
 					lastLocation = line[line.length-j++];
+					if( ignoreEmotesForAlign && lastLocation && lastLocation.isEmote ) 
+					{
+						lastLocation = null;
+					}
 				}
 				// le x max de la ligne
 				right = lastLocation ? lastLocation.x - lastLocation.xOffset + lastLocation.xAdvance : 0;
@@ -817,19 +857,45 @@ package starling.extensions.HTMLBitmapFonts
 				else if( hAlign == HTMLTextField.RIGHT_CENTERED ) 	xOffset = longestLineWidth + (width - longestLineWidth) / 2 - right;
 				else if( hAlign == HTMLTextField.LEFT_CENTERED ) 	xOffset = (width - longestLineWidth) / 2;
 				
+				xOffset -= xOffsetEmote>>1;
+				
 				// parcourir les caractères
 				for( c=0; c<numChars; ++c )
 				{
 					// récupérer le CharLocation
-					charLocation 		= line[c];
+					charLocation = line[c];
 					if( charLocation )
 					{
 						// appliquer l'offset x et le _globalScale à la positon x du caractère
 						charLocation.x = charLocation.x + xOffset;
-						// aligner les emotes
-						if( charLocation.isEmote )	charLocation.y -= (charLocation.height-linesSizes[lineID])>>1;
 						// appliquer l'offset y et le scale à la positon y du caractère
 						charLocation.y = charLocation.y + yOffset;
+						// aligner les emotes
+						if( charLocation.isEmote )	
+						{
+							var id	:int = c;
+							var prev:CharLocation;
+							if( c > 0 )
+							{
+								do{ prev = line[--id]; }while( prev.isEmote || prev.char.charID == CHAR_SPACE && id > 0 );
+								
+								if( prev.isEmote || prev.char.charID == CHAR_SPACE )
+									charLocation.y -= (charLocation.height-linesSizes[lineID])>>1;
+								else
+									charLocation.y = prev.y + ((prev.height - charLocation.height)>>1)-2;
+							}
+							else if( numChars > 1 )
+							{
+								do{ prev = line[++id]; }while( prev.isEmote || prev.char.charID == CHAR_SPACE && id < numChars-1 );
+								
+								if( prev.isEmote || prev.char.charID == CHAR_SPACE )
+									charLocation.y -= (charLocation.height-linesSizes[lineID])>>1;
+								else
+									charLocation.y = prev.y + yOffset + ((prev.height - charLocation.height)>>1)-2;
+							}
+							else charLocation.y -= (charLocation.height-linesSizes[lineID])>>1;
+						}
+						
 						// ajouter le caractere au tableau
 						finalLocations.push(charLocation);
 					}
@@ -843,10 +909,10 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** les tailles réduites **/
-		private var _reducedSizes	:Array;
+		protected var _reducedSizes	:Array;
 		/** reduce the size of all items in the array **/
 		[Inline]
-		private final function _reduceSizes( sizes:Array, minFontSize:int ):Boolean
+		protected final function _reduceSizes( sizes:Array, minFontSize:int, text:String ):Boolean
 		{
 			// récupérer la taille du tableau de tailles
 			var len			:int = sizes.length;
@@ -873,7 +939,7 @@ package starling.extensions.HTMLBitmapFonts
 		
 		/** return the biggest line height **/
 		[Inline]
-		private final function _getBiggestLineHeight( sizes:Array, styles:Array, len:int ):Number
+		protected final function _getBiggestLineHeight( sizes:Array, styles:Array, len:int ):Number
 		{
 			// la valeur max à retourner
 			var max			:Number = 0;
@@ -933,7 +999,7 @@ package starling.extensions.HTMLBitmapFonts
 			return mFontStyles[style] ? mFontStyles[style].availableSizes : null;
 		}
 		
-		private var _lineSpacing:int = 0;
+		protected var _lineSpacing:int = 0;
 		public function set lineSpacing( value:int ):void
 		{
 			_lineSpacing = value;

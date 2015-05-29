@@ -36,6 +36,16 @@ ACCEPTED TAGS:
 
 <i>HTMLTextField uses HTMLBitmapFonts instead of the tradtional BitmapFont.</i>
 
+* **ADDED DEVICE FONTS SUPPORT :**
+___
+New Device fonts support:
+-------------------------
+
+* You can use a list of fonts to use the device font by default using the static var `HTMLTextField.$useDeviceFontsForFontNames`.
+* You can define the default device font replacement by using the static var `HTMLTextField.$useDeviceFontName`, all fonts listed in `HTMLTextField.$useDeviceFontsForFontNames` will be kept.
+* You can define to use device fonts for all textFields by using the static var `HTMLTextField.$useDeviceFonts`.
+* You can define by textField to use device fonts by using the instance var `myTextField.useDeviceFonts`.
+
 ___
 Usage:
 -------------------------
@@ -52,22 +62,24 @@ They can be generated with tools like :
 Personnaly i use AssetManager for loading fonts and i just modified it like this: <br/>
 in loadQueue -> processXML :</br>
 
-	// if I parse fontHTML -> load the font for HTMLTextFields
-	else if( rootNode == "fontHTML" )
-	{
-		name 		= xml.info.@face.toString();
-		fileName 	= getName(xml.pages.page.@file.toString());
-		isBold 		= xml.info.@bold == 1;
-		isItalic 	= xml.info.@italic == 1;
-		
-		log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
-		
-		fontTexture = getTexture( fileName );
-		HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.@size, isBold, isItalic, name.toLowerCase() );
-		removeTexture( fileName, false );
-		
-		mLoadedHTMLFonts.push( name.toLowerCase() );
-	}
+```as3
+// if I parse fontHTML -> load the font for HTMLTextFields
+else if( rootNode == "fontHTML" )
+{
+	name 		= xml.info.@face.toString();
+	fileName 	= getName(xml.pages.page.@file.toString());
+	isBold 		= xml.info.@bold == 1;
+	isItalic 	= xml.info.@italic == 1;
+
+	log("Adding html bitmap font '" + name + "'" + " _bold: " + isBold + " _italic: " + isItalic );
+
+	fontTexture = getTexture( fileName );
+	HTMLTextField.registerBitmapFont( fontTexture, xml, xml.info.@size, isBold, isItalic, name.toLowerCase() );
+	removeTexture( fileName, false );
+
+	mLoadedHTMLFonts.push( name.toLowerCase() );
+}
+```
 
 ___
 Other things:
@@ -82,6 +94,7 @@ Other things:
 * Added left centered and right centered horizontal alignements rules, use <code>HTMLTextField.LEFT_CENTERED</code> and <code>HTMLTextField.RIGHT_CENTERED</code>.
 * You can easily make shadows on the text by setting <code>shadowX</code>, <code>shadowY</code> and <code>shadowColor</code> vars.
 * You can limit the min font size when <code>autoScale</code> is <code>true</code> with the <code>minFontSize</code> var.
+* You can override the coloring behaviour for the emotes by using <code>colorizeEmotes</code> it's default to <code>false</code>
 ___
 Warnings:
 -------------
