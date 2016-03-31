@@ -13,15 +13,14 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 	import starling.extensions.HTMLBitmapFonts.HTMLBitmapFonts;
 	import starling.extensions.HTMLBitmapFonts.HTMLTextField;
 	import starling.textures.Texture;
-	import starling.utils.HAlign;
-	import starling.utils.VAlign;
+	import starling.utils.Align;
 
 	public class HTMLDeviceFonts extends HTMLBitmapFonts
 	{
 		/** the vector used for the lines **/
 		protected static var dlines:Vector.< Vector.<DeviceFontCharLocation> >;
 		
-		public function set name(value:String):void{ mName = value; };
+		public function set name( value:String ):void{ mName = value; }
 		
 		public function HTMLDeviceFonts()
 		{
@@ -46,14 +45,19 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 		 * @param width container width
 		 * @param height container height
 		 * @param text the text String
-		 * @param fontSizes (default null->base size) the array containing the size by char. (if shorter than the text, the last value is used for the rest)
-		 * @param styles (default null->base style) the array containing the style by char. (if shorter than the text, the last value is used for the rest)
-		 * @param colors (default null->0xFFFFFF) the array containing the colors by char, no tint -> 0xFFFFFF (if shorter than the text, the last value is used for the rest) 
+		 * @param fontSizes (default null->base size) the array containing the size by char. (if shorter than the text,
+		 *     the last value is used for the rest)
+		 * @param styles (default null->base style) the array containing the style by char. (if shorter than the text,
+		 *     the last value is used for the rest)
+		 * @param colors (default null->0xFFFFFF) the array containing the colors by char, no tint -> 0xFFFFFF (if
+		 *     shorter than the text, the last value is used for the rest)
 		 * @param hAlign (default center) horizontal align rule
 		 * @param vAlign (default center) vertical align rule
-		 * @param autoScale (default true) if true the text will be reduced for fiting the container size (if smaller font size are available)
+		 * @param autoScale (default true) if true the text will be reduced for fiting the container size (if smaller
+		 *     font size are available)
 		 * @param kerning (default true) true if you want to use kerning
-		 * @param resizeQuad (default false) if true, the Quad can be bigger tahn width, height if the texte cannot fit. 
+		 * @param resizeQuad (default false) if true, the Quad can be bigger tahn width, height if the texte cannot
+		 *     fit.
 		 * @param keepDatas (default null) don't delete the Vector.<CharLocation> at the end if a subclass need it.
 		 * @param autoCR (default true) do auto line break or not.
 		 * @param maxWidth the max width if resizeQuad is true.
@@ -409,7 +413,8 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 							// on ajoute le caractère au tableau
 							currentLine.push( charLocation );
 							
-							// on met a jour la position x du prochain caractère si ce n'est pas le premier espace d'une ligne
+							// on met a jour la position x du prochain caractère si ce n'est pas le premier espace
+							// d'une ligne
 							if( currentLine.length != 1 || charID != CHAR_SPACE )	
 							{
 								currentX += charLocation.xAdvance;
@@ -451,9 +456,13 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 									
 									if( lastWhiteSpace >= 0 && lastWhiteSpaceL >= 0 )
 									{
-										// si on a eu un espace on va couper apres le dernier espace sinon on coupe à lindex actuel
-										var numCharsToRemove	:int = currentLine.length - lastWhiteSpaceL+1; //i - lastWhiteSpace + 1;
-										var removeIndex			:int = lastWhiteSpaceL + 1; //lastWhiteSpace+1;//currentLine.length - numCharsToRemove + 1;
+										// si on a eu un espace on va couper apres le dernier espace sinon on coupe à
+										// lindex actuel
+										var numCharsToRemove	:int = currentLine.length - lastWhiteSpaceL+1; //i -
+																											// lastWhiteSpace
+																											// + 1;
+										var removeIndex			:int = lastWhiteSpaceL + 1; //lastWhiteSpace+1;//currentLine.length
+																					  // - numCharsToRemove + 1;
 										
 										// couper la ligne
 										var temp:Vector.<DeviceFontCharLocation> = DeviceFontCharLocation.vectorFromPool();
@@ -542,7 +551,8 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 					_reduceSizes(fontSizes, minFontSize, text);
 				}
 				
-				// si l'autoscale est activé et que le texte ne rentre pas dans la zone spécifié, on réduit la taille de la police
+				// si l'autoscale est activé et que le texte ne rentre pas dans la zone spécifié, on réduit la taille
+				// de la police
 				if( (autoScale || (resizeQuad && width >= maxWidth)) && !finished && _reducedSizes )
 				{
 					fontSizes 		= _reducedSizes;
@@ -577,9 +587,9 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			
 			if( baseY == 0 )	baseY = currentMaxBaseS;
 			
-			if( vAlign == VAlign.TOP )      			yOffset 	= baseY;
-			else if( vAlign == VAlign.BOTTOM )  		yOffset 	= baseY + (height-bottom);
-			else if( vAlign == VAlign.CENTER ) 			yOffset 	= baseY + (height-bottom)/2;
+			if( vAlign == Align.TOP )                    yOffset = baseY;
+			else if( vAlign == Align.BOTTOM )            yOffset = baseY + (height - bottom);
+			else if( vAlign == Align.CENTER )            yOffset = baseY + (height - bottom) / 2;
 			if( yOffset < 0 )							yOffset 	= 0;
 			
 			// la taille de la ligne la plus longue utile pour les LEFT_CENTERED et RIGHT_CENTERED
@@ -662,8 +672,8 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 				right = lastLocation ? lastLocation.x - lastLocation.xOffset + lastLocation.xAdvance : 0;
 				
 				// calculer l'offset x en fonction de la règle d'alignement horizontal
-				if( hAlign == HAlign.RIGHT )       					xOffset =  width - right;
-				else if( hAlign == HAlign.CENTER ) 					xOffset = (width - right) / 2;
+				if( hAlign == Align.RIGHT )                        xOffset = width - right;
+				else if( hAlign == Align.CENTER )                    xOffset = (width - right) / 2;
 				else if( hAlign == HTMLTextField.RIGHT_CENTERED ) 	xOffset = longestLineWidth + (width - longestLineWidth) / 2 - right;
 				else if( hAlign == HTMLTextField.LEFT_CENTERED ) 	xOffset = (width - longestLineWidth) / 2;
 				
@@ -766,7 +776,8 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			loc.xAdvance	= _txt.getCharBoundaries(1).x - _txt.getCharBoundaries(0).x;
 			//loc.yAdvance	= _txt.getLineMetrics(0).height;
 			loc.xOffset		= -3;
-			loc.yOffset		= -2;//_txt.getLineMetrics(0).ascent - _txt.getLineMetrics(0).descent - _txt.getLineMetrics(0).height;
+			loc.yOffset		= -2;//_txt.getLineMetrics(0).ascent - _txt.getLineMetrics(0).descent -
+							  // _txt.getLineMetrics(0).height;
 			loc.baseLine	= _txt.getLineMetrics(0).ascent - _txt.getLineMetrics(0).height;
 			loc.isBold		= bold;
 			loc.isItalic	= italic;

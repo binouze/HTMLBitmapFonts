@@ -8,11 +8,10 @@ package starling.extensions.HTMLBitmapFonts
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
 	import flash.utils.Dictionary;
-	
-	import starling.core.RenderSupport;
+
 	import starling.display.DisplayObject;
 	import starling.display.DisplayObjectContainer;
-	import starling.display.QuadBatch;
+	import starling.display.MeshBatch;
 	import starling.display.Sprite;
 	import starling.events.Event;
 	import starling.events.Touch;
@@ -20,11 +19,11 @@ package starling.extensions.HTMLBitmapFonts
 	import starling.events.TouchPhase;
 	import starling.extensions.HTMLBitmapFonts.deviceFonts.DeviceFontCharLocation;
 	import starling.extensions.HTMLBitmapFonts.deviceFonts.HTMLDeviceFonts;
+	import starling.rendering.Painter;
 	import starling.text.BitmapChar;
 	import starling.textures.Texture;
-	import starling.utils.HAlign;
+	import starling.utils.Align;
 	import starling.utils.RectangleUtil;
-	import starling.utils.VAlign;
 	
 	/** 
 	 * A TextField to show simplified HTML text
@@ -32,7 +31,7 @@ package starling.extensions.HTMLBitmapFonts
 	public class HTMLTextField extends DisplayObjectContainer
 	{
 		/** the default font name **/
-		public static const DEFAULT_FONT_NAME			:String = 'bub';
+		public static const DEFAULT_FONT_NAME:String = 'Verdana';
 		
 		/** pass this to true to have device fonts instead of BitmapFonts **/
 		public static var $useDeviceFonts				:Boolean = false;
@@ -56,7 +55,7 @@ package starling.extensions.HTMLBitmapFonts
 		/** define the default links color, null for no change (default null)**/
 		public var defaultLinkColor						:* = null;
 		
-		/** static default method to navigate to url, you are still able to change it by field using the non static method ( function(url:String):void ) **/ 
+		/** static default method to navigate to url, you are still able to change it by field using the non static method ( function(url:String):void ) **/
 		public static var navigateToURLFunction			:Function			= HTMLTextField._navigateToURL;
 		/** the function to call to navigate to url ( function(url:String):void ) **/
 		public var navigateToURLFunction				:Function 			= HTMLTextField.navigateToURLFunction;
@@ -67,102 +66,102 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** Helper objects. */
-		protected static var sHelperMatrix		:Matrix 			= new Matrix();
-		protected static var sHelperRect		:Rectangle			= new Rectangle();
+		protected static var sHelperMatrix:Matrix  = new Matrix();
+		protected static var sHelperRect:Rectangle = new Rectangle();
 		
 		/** true when a redraw is needed **/
-		protected var _mRequiresRedraw			:Boolean;
+		protected var _mRequiresRedraw:Boolean;
 		
 		//-- variables pour le texte standard --//
 		
 		/** the size of the text **/
-		protected var mSize						:Number;
+		protected var mSize:Number;
 		/** the color of the text **/
-		protected var mColor					:*;
+		protected var mColor:*;
 		/** the style of the text **/
-		protected var mStyle					:uint;
+		protected var mStyle:uint;
 		/** true for underlining the text **/
-		protected var mUnderline				:Boolean;
+		protected var mUnderline:Boolean;
 		/** the text (without html formatting) **/
-		protected var mText						:String;
+		protected var mText:String;
 		/** the font name **/
-		protected var mFontName					:String;
+		protected var mFontName:String;
 		/** the halign rule **/
-		protected var mHAlign					:String;
+		protected var mHAlign:String;
 		/** the vAlign rule **/
-		protected var mVAlign					:String;
-		/** bold **/		
-		protected var mBold						:Boolean;
+		protected var mVAlign:String;
+		/** bold **/
+		protected var mBold:Boolean;
 		/** italic **/
-		protected var mItalic					:Boolean;
+		protected var mItalic:Boolean;
 		/** if true the text will be resized to fit in the width / height area (use only font size added the the BitmapFontStyle) **/
-		protected var mAutoScale				:Boolean;
+		protected var mAutoScale:Boolean;
 		/** use kerning **/
-		protected var mKerning					:Boolean;
+		protected var mKerning:Boolean;
 		/** when true, the text will automaticaly go to the next line if it not fit in the width **/
-		protected var mAutoCR					:Boolean = true;
+		protected var mAutoCR:Boolean     = true;
 		/** pass it to true if you want to hide the emotes but keep their place **/
-		protected var mHideEmotes				:Boolean = false;
+		protected var mHideEmotes:Boolean = false;
 		/** the minimum font size to reduce to **/
-		protected var mMinFontSize				:int = 10;
+		protected var mMinFontSize:int    = 10;
 		
 		//-- auto resize --//
 		
 		/** if true, the size will be enlarged to contain the text **/
-		protected var mResizeField				:Boolean = false;
+		protected var mResizeField:Boolean = false;
 		/** the maximum width when resizeField is set to true **/
-		protected var mMaxWidth					:int = 900;
+		protected var mMaxWidth:int        = 900;
 		/** used when mResizeField is true to keep the base size **/
-		protected var _baseWidth				:int;
+		protected var _baseWidth:int;
 		/** used when mResizeField is true to keep the base size **/
-		protected var _baseHeight				:int;
+		protected var _baseHeight:int;
 		
 		//-- Shadow --//
 		
 		/** horizontal shadow offset (0 = no shadow)**/
-		protected var mShadowX					:int = 0;
+		protected var mShadowX:int      = 0;
 		/** vertical shadow offset (0 = no shadow)**/
-		protected var mShadowY					:int = 0;
+		protected var mShadowY:int      = 0;
 		/** shadow color (default 0x222222) **/
-		protected var mShadowColor				:uint = 0x0;
+		protected var mShadowColor:uint = 0x0;
 		
 		//-- variables utiles pour le texte html --//
 		
 		/** true if text is HTML text **/
-		protected var mIsHTML					:Boolean;
+		protected var mIsHTML:Boolean;
 		/** the html text **/
-		protected var mTextHTML					:String;
+		protected var mTextHTML:String;
 		/** the sizes list **/
-		protected var mSizes					:Array = [];
+		protected var mSizes:Array      = [];
 		/** the styles list **/
-		protected var mStyles					:Array = [];
+		protected var mStyles:Array     = [];
 		/** the color list **/
-		protected var mColors					:Array = [];
+		protected var mColors:Array     = [];
 		/** the underlines list **/
-		protected var mUnderlines				:Array = [];
+		protected var mUnderlines:Array = [];
 		/** the links list **/
-		protected var mLinks					:Array;
+		protected var mLinks:Array;
 		/** les rectangles de touch pour les lnks **/
-		protected var mLinksRect				:Vector.<Rectangle>;
+		protected var mLinksRect:Vector.<Rectangle>;
 		/** the line spacing **/
-		protected var mLineSpacing				:int = 0;
+		protected var mLineSpacing:int  = 0;
 		
 		/** text bounds **/
-		protected var mTextBounds				:Rectangle;
+		protected var mTextBounds:Rectangle;
 		/** hit area **/
-		protected var mHitArea					:Rectangle;
+		protected var mHitArea:Rectangle;
 		
-		/** the quadBatch **/
-		protected var mQuadBatch				:QuadBatch;
-		protected var mQuadBatchS				:QuadBatch;
+		/** the MeshBatch **/
+		protected var mMeshBatch:MeshBatch;
+		protected var mMeshBatchS:MeshBatch;
 		
 		/** the sprite in case of using deviceFonts **/
-		protected var mSprite					:Sprite;
+		protected var mSprite:Sprite;
 		
 		/** set to true for colorize emotes **/
-		public var colorizeEmotes				:Boolean = false;
+		public var colorizeEmotes:Boolean       = false;
 		/** set to true to ignore first and last emote on horizontal centering **/
-		public var ignoreEmotesForAlign			:Boolean = false;
+		public var ignoreEmotesForAlign:Boolean = false;
 		
 		/** 
 		 * Create a new text field with the given properties. 
@@ -175,7 +174,8 @@ package starling.extensions.HTMLBitmapFonts
 		 * bold 
 		 * italic
 		 * isHtml if true, the text will be parsed as simplified HTML
-		 * resizeField if true the text will have his width/height ajusted to the text size even if bigger than width/height value (see maxWidth).
+		 * resizeField if true the text will have his width/height ajusted to the text size even if bigger than
+		 * width/height value (see maxWidth).
 		 **/
 		public function HTMLTextField( width:int, height:int, text:String = '', fontName:String=DEFAULT_FONT_NAME, fontSize:int = 16, color:* = 0xFFFFFF, bold:Boolean = false, italic:Boolean = false, isHtml:Boolean = true, resizeField:Boolean = false )
 		{
@@ -194,20 +194,20 @@ package starling.extensions.HTMLBitmapFonts
 				}
 			}
 			// définir la police du textField
-			this.fontName = fontName/*.toLowerCase()*/;
+			this.fontName = fontName;
 			
 			// définir les valeurs par défaut pour le textField
-			mSize 				= fontSize;
-			mColor 				= color;
-			mHAlign 			= HAlign.CENTER;
-			mVAlign 			= VAlign.CENTER;
-			mKerning 			= true;
-			mBold 				= bold;
-			mItalic				= italic;
-			mIsHTML				= isHtml;
-			mResizeField 		= resizeField;
-			_baseWidth			= width>0?width:1;
-			_baseHeight			= height>0?height:1;
+			mSize        = fontSize;
+			mColor       = color;
+			mHAlign      = Align.CENTER;
+			mVAlign      = Align.CENTER;
+			mKerning     = true;
+			mBold        = bold;
+			mItalic      = italic;
+			mIsHTML      = isHtml;
+			mResizeField = resizeField;
+			_baseWidth   = width>0?width:1;
+			_baseHeight  = height>0?height:1;
 			
 			// définir le style de base pour le textfield
 			mStyle = BitmapFontStyle.REGULAR;
@@ -224,9 +224,8 @@ package starling.extensions.HTMLBitmapFonts
 			
 			_touchable = false;
 			
-			addEventListener( starling.events.Event.FLATTEN, onFlatten );
-			addEventListener( starling.events.Event.ADDED_TO_STAGE, _onStage );
-			addEventListener( starling.events.Event.REMOVED_FROM_STAGE, _onRemove );
+			addEventListener( Event.ADDED_TO_STAGE, _onStage );
+			addEventListener( Event.REMOVED_FROM_STAGE, _onRemove );
 		}
 		
 		private var _userDefinedTouchable:Boolean = false;
@@ -270,11 +269,9 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** a static helper point used for the link touch detection **/
-		private static var _hPoint		:Point 		= new Point();
-		/** true when the mouse is over a link **/
-		private var _isOver		:Boolean 	= false;
+		private static var _hPoint		:Point = new Point();
 		/** true when the mouse is down on a link **/
-		private var _isDown		:Boolean 	= false;
+		private var _isDown:Boolean              = false;
 		/** touch process to detect links clicks **/
 		private function _onTouch(e:TouchEvent):void
 		{
@@ -282,7 +279,6 @@ package starling.extensions.HTMLBitmapFonts
 			if( !touch )
 			{
 				Mouse.cursor = MouseCursor.AUTO;
-				_isOver = false;
 				_isDown = false;
 				return;
 			}
@@ -293,7 +289,6 @@ package starling.extensions.HTMLBitmapFonts
 			if( idLink == -1 )
 			{
 				Mouse.cursor = MouseCursor.AUTO;
-				_isOver = false;
 				_isDown = false;
 				return;
 			}
@@ -301,13 +296,11 @@ package starling.extensions.HTMLBitmapFonts
 			if( touch.phase == TouchPhase.HOVER )						// mouse over
 			{
 				Mouse.cursor = MouseCursor.BUTTON;
-				_isOver = true;
 			}
 			else if( touch.phase == TouchPhase.BEGAN && !_isDown )		// mouse down
 			{
 				Mouse.cursor = MouseCursor.BUTTON;
 				_isDown = true;
-				_isOver = true;
 			}
 			else if( touch.phase == TouchPhase.ENDED && _isDown )		// mouse up -> click
 			{
@@ -332,32 +325,22 @@ package starling.extensions.HTMLBitmapFonts
 		/** dispose textures data. */
 		public override function dispose():void
 		{
-			// disposer le QuadBatch du texte
-			if( mQuadBatch )		
+			// disposer le MeshBatch du texte
+			if( mMeshBatch )
 			{
-				mQuadBatch.dispose();
-				mQuadBatch = null;
+				mMeshBatch.dispose();
+				mMeshBatch = null;
 			}
-			if( mQuadBatchS )		
+			if( mMeshBatchS )
 			{
-				mQuadBatchS.dispose();
-				mQuadBatchS = null;
+				mMeshBatchS.dispose();
+				mMeshBatchS = null;
 			}
 			super.dispose();
 		}
-		
-		/** redraw contents if needed **/
-		protected function onFlatten():void
-		{
-			if( _mRequiresRedraw ) 
-			{
-				if( mustUsedeviceFonts() )	redrawContentDevice();
-				else						redrawContents();
-			}
-		}
-		
+
 		/** @inheritDoc */
-		public override function render(support:RenderSupport, parentAlpha:Number):void
+		public override function render( painter:Painter ):void
 		{
 			if( _mRequiresRedraw ) 
 			{
@@ -365,21 +348,21 @@ package starling.extensions.HTMLBitmapFonts
 				else						redrawContents();
 			}
 			
-			super.render(support, parentAlpha);
+			super.render( painter );
 		}
 		
 		private var _deviceFont:HTMLDeviceFonts;
 		protected function redrawContentDevice():void
 		{
-			if( mQuadBatch )	
+			if( mMeshBatch )
 			{
-				mQuadBatch.removeFromParent(true);
-				mQuadBatch = null;
+				mMeshBatch.removeFromParent( true );
+				mMeshBatch = null;
 			}
-			if( mQuadBatchS )	
+			if( mMeshBatchS )
 			{
-				mQuadBatchS.removeFromParent(true);
-				mQuadBatchS = null;
+				mMeshBatchS.removeFromParent( true );
+				mMeshBatchS = null;
 			}
 			
 			if( !mSprite )		
@@ -430,8 +413,8 @@ package starling.extensions.HTMLBitmapFonts
 			
 			if( mResizeField )
 			{
-				mHitArea.width 	= _baseWidth >= mQuadBatch.width ? _baseWidth : mQuadBatch.width;
-				mHitArea.height = _baseHeight >= mQuadBatch.height ? _baseHeight : mQuadBatch.height;
+				mHitArea.width  = _baseWidth >= mMeshBatch.width ? _baseWidth : mMeshBatch.width;
+				mHitArea.height = _baseHeight >= mMeshBatch.height ? _baseHeight : mMeshBatch.height;
 			}
 			
 			// apply vAlign
@@ -522,15 +505,15 @@ package starling.extensions.HTMLBitmapFonts
 			mRequiresRedraw 	= false;	
 			
 			// créer ou reset le quad batch
-			if( mQuadBatch == null ) 
-			{ 
-				mQuadBatch = new QuadBatch(); 
-				mQuadBatch.touchable = false;
-				//mQuadBatch.batchable = true;
-				addChild( mQuadBatch ); 
+			if( mMeshBatch == null )
+			{
+				mMeshBatch           = new MeshBatch();
+				mMeshBatch.touchable = false;
+				//mMeshBatch.batchable = true;
+				addChild( mMeshBatch );
 			}
 			else
-				mQuadBatch.reset();
+				mMeshBatch.clear();
 			
 			// Récupérer le HTMLBitmapFont
 			var bitmapFont:HTMLBitmapFonts = htmlBitmapFonts[mFontName];
@@ -557,50 +540,41 @@ package starling.extensions.HTMLBitmapFonts
 			var keepData:Object = mLinks && mLinks.length > 0 ? {} : null;
 			// on fait draw le texte en fonction des parametres
 			bitmapFont.lineSpacing = mLineSpacing;
-			bitmapFont.fillQuadBatch( mQuadBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, underlines, mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, keepData, mAutoCR, mMaxWidth, mHideEmotes, mMinFontSize, false, colorizeEmotes, ignoreEmotesForAlign );
+			bitmapFont.fillMeshBatch( mMeshBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, underlines, mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, keepData, mAutoCR, mMaxWidth, mHideEmotes, mMinFontSize, false, colorizeEmotes, ignoreEmotesForAlign );
 			
 			if( mShadowX != 0 || mShadowY != 0 )
 			{
-				if( mQuadBatchS == null ) 
-				{ 
-					mQuadBatchS = new QuadBatch(); 
-					mQuadBatchS.touchable = false;
-					//mQuadBatchS.batchable = true;
-					addChildAt( mQuadBatchS, 0 ); 
+				if( mMeshBatchS == null )
+				{
+					mMeshBatchS           = new MeshBatch();
+					mMeshBatchS.touchable = false;
+					//mMeshBatchS.batchable = true;
+					addChildAt( mMeshBatchS, 0 );
 				}
 				else
-					mQuadBatchS.reset();
+					mMeshBatchS.clear();
 				
-				bitmapFont.fillQuadBatch( mQuadBatchS, mHitArea.width, mHitArea.height, mText, sizes, styles, [mShadowColor], [false], mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, false, mAutoCR, mMaxWidth, mHideEmotes, mMinFontSize, true, false, ignoreEmotesForAlign );
-				mQuadBatchS.x = mShadowX;
-				mQuadBatchS.y = mShadowY;
+				bitmapFont.fillMeshBatch( mMeshBatchS, mHitArea.width, mHitArea.height, mText, sizes, styles, [mShadowColor], [false], mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, false, mAutoCR, mMaxWidth, mHideEmotes, mMinFontSize, true, false, ignoreEmotesForAlign );
+				mMeshBatchS.x = mShadowX;
+				mMeshBatchS.y = mShadowY;
 			}
-			else if( mQuadBatchS )
+			else if( mMeshBatchS )
 			{
-				mQuadBatchS.removeFromParent(true);
-				mQuadBatchS = null;
+				mMeshBatchS.removeFromParent( true );
+				mMeshBatchS = null;
 			}
 			
 			
 			if( mResizeField )
 			{
-				mHitArea.width 	= _baseWidth >= mQuadBatch.width ? _baseWidth : mQuadBatch.width;
-				mHitArea.height = _baseHeight >= mQuadBatch.height ? _baseHeight : mQuadBatch.height;
+				mHitArea.width  = _baseWidth >= mMeshBatch.width ? _baseWidth : mMeshBatch.width;
+				mHitArea.height = _baseHeight >= mMeshBatch.height ? _baseHeight : mMeshBatch.height;
 			}
 			
 			// apply vAlign
-			mQuadBatch.getBounds(mQuadBatch, sHelperRect);
+			mMeshBatch.getBounds( mMeshBatch, sHelperRect );
 			var yOffset:int = 0;
-			
-			/*if( vAlign == VAlign.TOP )      	yOffset 	= -sHelperRect.y;
-			else if( vAlign == VAlign.BOTTOM )  yOffset 	= -sHelperRect.y + (height-sHelperRect.height);
-			else if( vAlign == VAlign.CENTER ) 	yOffset 	= -sHelperRect.y + (height-sHelperRect.height)/2;
-			if( yOffset < 0 )					yOffset 	= 0;
-			
-			mQuadBatch.y = yOffset;
-			if( mQuadBatchS )	
-				mQuadBatchS.y 	= yOffset + shadowY;*/
-			
+
 			if( mLinks && mLinks.length > 0 && keepData && keepData.loc && keepData.loc.length > 0 )
 			{
 				var charLoc:Vector.<CharLocation> = keepData.loc;
@@ -718,7 +692,7 @@ package starling.extensions.HTMLBitmapFonts
 			}
 			else
 			{
-				if( mTextBounds == null ) 	mTextBounds = mQuadBatch.getBounds( mQuadBatch );
+				if( mTextBounds == null )    mTextBounds = mMeshBatch.getBounds( mMeshBatch );
 			}
 			
 			return mTextBounds.clone();
@@ -732,11 +706,11 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** @inheritDoc */
-		public override function hitTest( localPoint:Point, forTouch:Boolean=false ):DisplayObject
+		public override function hitTest( localPoint:Point ):DisplayObject
 		{
-			if (forTouch && (!visible || !touchable)) 		return null;
-			else if (mHitArea.containsPoint(localPoint)) 	return this;
-			else return null;
+			if( (!visible || !touchable) )                    return null;
+			else if( mHitArea.containsPoint( localPoint ) )    return this;
+			else                                            return null;
 		}
 		
 		/** @inheritDoc */
@@ -770,8 +744,8 @@ package starling.extensions.HTMLBitmapFonts
 				else						redrawContents();
 			}
 			
-			if( mustUsedeviceFonts() )		return mSprite ? mSprite.width : 0
-			else							return mQuadBatch ? mQuadBatch.width : 0;
+			if( mustUsedeviceFonts() )        return mSprite ? mSprite.width : 0;
+			else                            return mMeshBatch ? mMeshBatch.width : 0;
 		}
 		/** get the text height **/
 		public function get textHeight():Number
@@ -782,8 +756,8 @@ package starling.extensions.HTMLBitmapFonts
 				else						redrawContents();
 			}
 			
-			if( mustUsedeviceFonts() )		return mSprite ? mSprite.height : 0
-			else							return  mQuadBatch ? mQuadBatch.height : 0;
+			if( mustUsedeviceFonts() )        return mSprite ? mSprite.height : 0;
+			else                            return mMeshBatch ? mMeshBatch.height : 0;
 		}
 		
 		/** 
@@ -870,7 +844,7 @@ package starling.extensions.HTMLBitmapFonts
 			
 			var char		:String;
 			
-			var actualID	:int
+			var actualID:int;
 			var actualIDComputed:Boolean = false;
 			
 			var len:int = mTextHTML.length;
@@ -1411,12 +1385,13 @@ package starling.extensions.HTMLBitmapFonts
 			super.y = int(value);
 		}
 		
-		public function get xx():Number{ return super.x };
+		public function get xx():Number{ return super.x }
 		public function set xx(value:Number):void
 		{
 			super.x = value;
 		}
-		public function get yy():Number{ return super.y };
+
+		public function get yy():Number{ return super.y }
 		public function set yy(value:Number):void
 		{
 			super.y = value;

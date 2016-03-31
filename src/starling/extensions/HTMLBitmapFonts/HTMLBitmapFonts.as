@@ -1,11 +1,10 @@
 package starling.extensions.HTMLBitmapFonts
 {
 	import starling.display.Image;
-	import starling.display.QuadBatch;
+	import starling.display.MeshBatch;
 	import starling.text.BitmapChar;
 	import starling.textures.Texture;
-	import starling.utils.HAlign;
-	import starling.utils.VAlign;
+	import starling.utils.Align;
 	
 	/** 
 	 * This class is used by HTMLTextField
@@ -249,25 +248,30 @@ package starling.extensions.HTMLBitmapFonts
 		
 		/** 
 		 * Fill the QuadBatch with text, no reset will be call on the QuadBatch
-		 * @param quadBatch the QuadBatch to fill
+		 * @param meshBatch the MeshBatch to fill
 		 * @param width container width
 		 * @param height container height
 		 * @param text the text String
-		 * @param fontSizes (default null->base size) the array containing the size by char. (if shorter than the text, the last value is used for the rest)
-		 * @param styles (default null->base style) the array containing the style by char. (if shorter than the text, the last value is used for the rest)
-		 * @param colors (default null->0xFFFFFF) the array containing the colors by char, no tint -> 0xFFFFFF (if shorter than the text, the last value is used for the rest) 
+		 * @param fontSizes (default null->base size) the array containing the size by char. (if shorter than the text,
+		 *     the last value is used for the rest)
+		 * @param styles (default null->base style) the array containing the style by char. (if shorter than the text,
+		 *     the last value is used for the rest)
+		 * @param colors (default null->0xFFFFFF) the array containing the colors by char, no tint -> 0xFFFFFF (if
+		 *     shorter than the text, the last value is used for the rest)
 		 * @param hAlign (default center) horizontal align rule
 		 * @param vAlign (default center) vertical align rule
-		 * @param autoScale (default true) if true the text will be reduced for fiting the container size (if smaller font size are available)
+		 * @param autoScale (default true) if true the text will be reduced for fiting the container size (if smaller
+		 *     font size are available)
 		 * @param kerning (default true) true if you want to use kerning
-		 * @param resizeQuad (default false) if true, the Quad can be bigger tahn width, height if the texte cannot fit. 
+		 * @param resizeQuad (default false) if true, the Quad can be bigger tahn width, height if the texte cannot
+		 *     fit.
 		 * @param keepDatas (default null) don't delete the Vector.<CharLocation> at the end if a subclass need it.
 		 * @param autoCR (default true) do auto line break or not.
 		 * @param maxWidth the max width if resizeQuad is true.
 		 * @param hideEmote, if true the emote wont be displayed.
 		 * @param minFontSize the minimum font size to reduce to. 
 		 **/
-		public function fillQuadBatch(quadBatch:QuadBatch, width:Number, height:Number, text:String,
+		public function fillMeshBatch( meshBatch:MeshBatch, width:Number, height:Number, text:String,
 									  fontSizes:Array = null, styles:Array = null, colors:Array = null, underlines:Array = null,
 									  hAlign:String="center", vAlign:String="center", autoScale:Boolean=true, 
 									  kerning:Boolean=true, resizeQuad:Boolean = false, keepDatas:Object = null, 
@@ -303,7 +307,7 @@ package starling.extensions.HTMLBitmapFonts
 			
 			// cas foireux pour le texte qui apparait mots à mots
 			if( keepDatas )			keepDatas.loc = CharLocation.cloneVector( charLocations );
-			if( !quadBatch )	
+			if( !meshBatch )
 			{
 				CharLocation.rechargePool();
 				return;
@@ -376,7 +380,7 @@ package starling.extensions.HTMLBitmapFonts
 				// scaler l'image
 				mHelperImage.scaleX = mHelperImage.scaleY = charLocation.scale;
 				// ajouter l'image au QuadBatch
-				quadBatch.addImage( mHelperImage );
+				meshBatch.addMesh( mHelperImage );
 				
 				// creating underlines
 				prevUnderline = underline;
@@ -398,7 +402,7 @@ package starling.extensions.HTMLBitmapFonts
 					mHelperImage.x = charLocation.x-margin;
 					mHelperImage.y = int(charLocation.y-charLocation.yOffset+2);
 					mHelperImage.width = charLocation.width+margin*2;
-					quadBatch.addImage(mHelperImage);
+					meshBatch.addMesh( mHelperImage );
 				}
 			}
 			
@@ -507,7 +511,8 @@ package starling.extensions.HTMLBitmapFonts
 						if( styleActu > BitmapFontStyle.NUM_STYLES || !mFontStyles[styleActu] )	styleActu = _baseStyle;
 						
 						// le size index pour pas avoir a le recuperer a chaque fois
-						var sizeIndex	:int 		= mSizeIndexes[i];//mFontStyles[styleActu].getBiggerOrEqualSizeIndex( sizeActu );
+						var sizeIndex	:int 		= mSizeIndexes[i];//mFontStyles[styleActu].getBiggerOrEqualSizeIndex(
+															   // sizeActu );
 						// reset le isEmote
 						var isEmote		:Boolean 	= false;
 						// c'est une nouvelle ligne donc la ligne n'est surrement pas finie
@@ -593,11 +598,13 @@ package starling.extensions.HTMLBitmapFonts
 							// on ajoute le caractère au tableau
 							currentLine.push( charLocation );
 							
-							// on met a jour la position x du prochain caractère si ce n'est pas le premier espace d'une ligne
+							// on met a jour la position x du prochain caractère si ce n'est pas le premier espace
+							// d'une ligne
 							if( currentLine.length != 1 || charID != CHAR_SPACE )	
 							{
 								currentX += charLocation.xAdvance;
-								//if( charID == CHAR_TAB )	currentX += charLocation.xAdvance;	// 2 espaces pour un tab
+								//if( charID == CHAR_TAB )	currentX += charLocation.xAdvance;	// 2 espaces pour
+								// un tab
 							}
 							
 							// on enregistre le CharCode du caractère
@@ -636,9 +643,14 @@ package starling.extensions.HTMLBitmapFonts
 									
 									if( lastWhiteSpace >= 0 && lastWhiteSpaceL >= 0 )
 									{
-										// si on a eu un espace on va couper apres le dernier espace sinon on coupe à lindex actuel
-										var numCharsToRemove	:int = currentLine.length - lastWhiteSpaceL;//+1; //i - lastWhiteSpace + 1;
-										var removeIndex			:int = lastWhiteSpaceL;// + 1; //lastWhiteSpace+1;//currentLine.length - numCharsToRemove + 1;
+										// si on a eu un espace on va couper apres le dernier espace sinon on coupe à
+										// lindex actuel
+										var numCharsToRemove	:int = currentLine.length - lastWhiteSpaceL;//+1; //i -
+																										 // lastWhiteSpace
+																										 // + 1;
+										var removeIndex			:int = lastWhiteSpaceL;// + 1;
+																				 // //lastWhiteSpace+1;//currentLine.length
+																				 // - numCharsToRemove + 1;
 										
 										// couper la ligne
 										var temp:Vector.<CharLocation> = CharLocation.vectorFromPool();
@@ -730,7 +742,8 @@ package starling.extensions.HTMLBitmapFonts
 					_reduceSizes(fontSizes, minFontSize, text);
 				}
 				
-				// si l'autoscale est activé et que le texte ne rentre pas dans la zone spécifié, on réduit la taille de la police
+				// si l'autoscale est activé et que le texte ne rentre pas dans la zone spécifié, on réduit la taille
+				// de la police
 				if( (autoScale || (resizeQuad && width >= maxWidth)) && !finished && _reducedSizes )
 				{
 					fontSizes 		= _reducedSizes;
@@ -766,9 +779,9 @@ package starling.extensions.HTMLBitmapFonts
 			
 			if( baseY == 0 )	baseY = currentMaxBaseS;
 			
-			if( vAlign == VAlign.TOP )      			yOffset 	= baseY;
-			else if( vAlign == VAlign.BOTTOM )  		yOffset 	= baseY + (height-bottom);
-			else if( vAlign == VAlign.CENTER ) 			yOffset 	= baseY + (height-bottom)/2;
+			if( vAlign == Align.TOP )                    yOffset = baseY;
+			else if( vAlign == Align.BOTTOM )            yOffset = baseY + (height - bottom);
+			else if( vAlign == Align.CENTER )            yOffset = baseY + (height - bottom) / 2;
 			if( yOffset < 0 )							yOffset 	= 0;
 			
 			// la taille de la ligne la plus longue utile pour les LEFT_CENTERED et RIGHT_CENTERED
@@ -852,8 +865,8 @@ package starling.extensions.HTMLBitmapFonts
 				right = lastLocation ? lastLocation.x - lastLocation.xOffset + lastLocation.xAdvance : 0;
 				
 				// calculer l'offset x en fonction de la règle d'alignement horizontal
-				if( hAlign == HAlign.RIGHT )       					xOffset =  width - right;
-				else if( hAlign == HAlign.CENTER ) 					xOffset = (width - right) / 2;
+				if( hAlign == Align.RIGHT )                        xOffset = width - right;
+				else if( hAlign == Align.CENTER )                    xOffset = (width - right) / 2;
 				else if( hAlign == HTMLTextField.RIGHT_CENTERED ) 	xOffset = longestLineWidth + (width - longestLineWidth) / 2 - right;
 				else if( hAlign == HTMLTextField.LEFT_CENTERED ) 	xOffset = (width - longestLineWidth) / 2;
 				
@@ -990,9 +1003,11 @@ package starling.extensions.HTMLBitmapFonts
 		/** The name of the font as it was parsed from the font file. */
 		public function get name():String { return mName; }
 		
-		/** The smoothing filter that is used for the texture. */ 
-		public function get smoothing():String { return mHelperImage.smoothing; }
-		public function set smoothing(value:String):void { mHelperImage.smoothing = value; } 
+		/** The smoothing filter that is used for the texture. */
+		public function get smoothing():String
+		{ return mHelperImage.textureSmoothing; }
+
+		public function set smoothing( value:String ):void{ mHelperImage.textureSmoothing = value; }
 		
 		public function getAvailableSizesForStyle( style:int ):Vector.<Number>
 		{
