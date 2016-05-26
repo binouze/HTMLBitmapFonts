@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="Flex" version="4">
+  <component name="FlexBuildConfigurationManager" active="HTMLBitmapFonts">
+    <configurations>
+      <configuration name="HTMLBitmapFonts" pure-as="true" output-type="Library" output-file="HTMLBitmapFonts.swc" output-folder="$MODULE_DIR$/bin">
+        <dependencies target-player="20.0">
+          <entries>
+            <entry library-id="adcf5d05-75c4-40d1-8163-1a6b900afa95">
+              <dependency linkage="External" />
+            </entry>
+          </entries>
+          <sdk name="AIRSDK_20" />
+        </dependencies>
+        <compiler-options />
+        <packaging-air-desktop />
+        <packaging-android />
+        <packaging-ios />
+      </configuration>
+    </configurations>
+    <compiler-options />
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+    </content>
+    <orderEntry type="jdk" jdkName="AIRSDK_20" jdkType="Flex SDK Type (new)" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" exported="" name="starling_v2" level="project" />
+    <orderEntry type="library" exported="" name="HTMLBitmapFonts" level="project" />
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="adcf5d05-75c4-40d1-8163-1a6b900afa95" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/starling_v2.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+  </component>
+</module>

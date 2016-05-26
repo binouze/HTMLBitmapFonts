@@ -1,104 +1,46 @@
 package starling.extensions.HTMLBitmapFonts.deviceFonts
 {
-	import starling.extensions.HTMLBitmapFonts.CharLocation;
-	import starling.textures.Texture;
+	import flash.display.DisplayObject;
 
-	public class DeviceFontCharLocation extends CharLocation
+	public class DeviceFontCharLocation
 	{
+		public var charIDs		:Vector.<int>;
 		public var charID		:int;
-		public var tex			:Texture;
-		/*public var x			:Number;
-		public var y			:Number;
-		public var doTint		:Boolean = true;
-		public var lineHeight	:Number;
-		public var baseLine		:Number;
-		public var isEmote		:Boolean;*/
-		public var _xAdvance		:Number;
-		//public var _yAdvance		:Number;
-		public var _xOffset		:Number;
-		public var _yOffset		:Number;
-		public var _width		:Number;
-		public var _height		:Number;
-		public var inUse		:Boolean = false;
+		public var link         :DisplayObject;
+		public var xAdvance	    :Number;
+		public var xOffset		:Number;
+		public var yOffset		:Number;
+		public var width		:Number;
+		public var height		:Number;
+		public var lineHeight   :Number;
 		public var size			:int;
 		public var isBold		:Boolean = false;
 		public var isItalic		:Boolean = false;
 		public var name			:String;
+		public var color        :*;
+		public var underline    :Boolean = false;
+		public var baseLine     :Number;
+		public var isEmote      :Boolean;
+		public var x            :Number;
+		public var y            :Number;
+		public var linkID       :int;
 		
-		override public function get xAdvance():Number
+		public function DeviceFontCharLocation( link:DisplayObject )
 		{
-			return _xAdvance;
-		}
-		override public function get xOffset():Number
-		{
-			return _xOffset;
-		}
-		override public function get yOffset():Number
-		{
-			return _yOffset;
-		}
-		override public function get width():Number
-		{
-			return _width;
-		}
-		override public function get height():Number
-		{
-			return _height;
-		}
-		override public function get lineHeight():Number
-		{
-			return _lineHeight;
+			this.link = link;
 		}
 		
-		
-		public function set xAdvance(value:Number):void
+		public function dreset( link:DisplayObject ):void
 		{
-			_xAdvance = value;
-		}
-		/*public function set yAdvance(value:Number):void
-		{
-			_yAdvance = value;
-		}*/
-		public function set xOffset(value:Number):void
-		{
-			_xOffset = value;
-		}
-		public function set yOffset(value:Number):void
-		{
-			_yOffset = value;
-		}
-		public function set width(value:Number):void
-		{
-			_width = value;
-		}
-		public function set height(value:Number):void
-		{
-			_height = value;
-		}
-		public function set lineHeight(value:Number):void
-		{
-			_lineHeight = value;
-		}
-		
-		public function DeviceFontCharLocation( char:Texture )
-		{
-			this.tex = char;
-			super(null);
-		}
-		
-		public function dreset( char:Texture ):void
-		{
-			this.tex 	= char;
-			inUse		= false;
+			this.link 	= link;
+			charIDs     = null;
 			charID		= 0;
 			x 			= 0;
 			y 			= 0;
-			doTint 		= true;
 			lineHeight	= 0;
 			baseLine	= 0;
 			isEmote 	= false;
 			xAdvance	= 0;
-			//yAdvance	= 0;
 			xOffset		= 0;
 			yOffset		= 0;
 			width		= 0;
@@ -106,21 +48,21 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			size 		= 0;
 			isBold		= false;
 			isItalic	= true;
+			color       = 0xFFFFFF;
+			underline   = false;
+			linkID      = -1;
 		}
 		
 		public function dclone():DeviceFontCharLocation
 		{
-			var retour:DeviceFontCharLocation = new DeviceFontCharLocation(tex);
-			retour.inUse		= inUse;
+			var retour:DeviceFontCharLocation = new DeviceFontCharLocation(link);
 			retour.charID		= charID;
 			retour.x 			= x;
 			retour.y 			= y;
-			retour.doTint 		= doTint;
 			retour.lineHeight 	= lineHeight;
 			retour.baseLine 	= baseLine;
 			retour.isEmote 		= isEmote;
 			retour.xAdvance		= xAdvance;
-			//retour.yAdvance		= yAdvance;
 			retour.xOffset		= xOffset;
 			retour.yOffset		= yOffset;
 			retour.width		= width;
@@ -129,6 +71,11 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			retour.isBold		= isBold;
 			retour.isItalic		= isItalic;
 			retour.name 		= name;
+			retour.charIDs      = charIDs;
+			retour.color        = color;
+			retour.underline    = underline;
+			retour.linkID       = linkID;
+
 			return retour;
 		}
 		
@@ -140,11 +87,11 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 		private static var sInstanceLoan:Vector.<DeviceFontCharLocation> = new <DeviceFontCharLocation>[];
 		private static var sVectorLoan:Array = [];
 		
-		public static function instanceFromPool( char:Texture ):DeviceFontCharLocation
+		public static function instanceFromPool( link:DisplayObject ):DeviceFontCharLocation
 		{
-			var instance:DeviceFontCharLocation = sInstancePool.length > 0 ? sInstancePool.pop() : new DeviceFontCharLocation(char);
+			var instance:DeviceFontCharLocation = sInstancePool.length > 0 ? sInstancePool.pop() : new DeviceFontCharLocation(link);
 			
-			instance.dreset(char);
+			instance.dreset(link);
 			sInstanceLoan[sInstanceLoan.length] = instance;
 			
 			return instance;
@@ -170,7 +117,6 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			while( sInstanceLoan.length > 0 )
 			{
 				instance = sInstanceLoan.pop();
-				instance.char = null;
 				
 				if( instanceLen < 300 )
 					sInstancePool[instanceLen++] = instance;
@@ -185,13 +131,7 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 					sVectorPool[vectorLen++] = vector;
 			}
 		}
-		
-		public static function resetPool():void
-		{
-			sInstanceLoan.length 	= 0;
-			sVectorLoan.length 		= 0;
-		}
-		
+
 		public static function cloneVector( toClone:Vector.<DeviceFontCharLocation> ):Vector.<DeviceFontCharLocation>
 		{
 			var len		:int = toClone.length;
@@ -212,7 +152,6 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			while( retour.length > 0 )
 			{
 				instance 		= retour.pop();
-				instance.char 	= null;
 				
 				if( instanceLen < 300 )
 					sInstancePool[instanceLen++] = instance;
@@ -221,7 +160,7 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			retour.length = 0;
 			
 			if( vectorLen < 300 )
-				sVectorPool[vectorLen++] = retour;
+				sVectorPool[vectorLen] = retour;
 		}
 	}
 }

@@ -1,5 +1,7 @@
 package starling.extensions.HTMLBitmapFonts
 {
+	import com.lagoon.display.images.ImagePool;
+
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -11,157 +13,144 @@ package starling.extensions.HTMLBitmapFonts
 
 	import starling.display.DisplayObject;
 	import starling.display.DisplayObjectContainer;
-	import starling.display.MeshBatch;
-	import starling.display.Sprite;
+	import starling.display.Image;
 	import starling.events.Event;
 	import starling.events.Touch;
 	import starling.events.TouchEvent;
 	import starling.events.TouchPhase;
-	import starling.extensions.HTMLBitmapFonts.deviceFonts.DeviceFontCharLocation;
 	import starling.extensions.HTMLBitmapFonts.deviceFonts.HTMLDeviceFonts;
 	import starling.rendering.Painter;
-	import starling.text.BitmapChar;
-	import starling.textures.Texture;
 	import starling.utils.Align;
 	import starling.utils.RectangleUtil;
-	
-	/** 
+
+	/**
 	 * A TextField to show simplified HTML text
 	 */
 	public class HTMLTextField extends DisplayObjectContainer
 	{
 		/** the default font name **/
-		public static const DEFAULT_FONT_NAME:String = 'Verdana';
-		
-		/** pass this to true to have device fonts instead of BitmapFonts **/
-		public static var $useDeviceFonts				:Boolean = false;
-		/** give the font name to replace by device fonts **/
-		public static var $useDeviceFontsForFontName	:Array = ['Verdana', 'Avenir-Medium', 'Avenir', 'Roboto-Medium', 'Roboto'];
-		/** give the device font name to use **/
-		public static var $useDeviceFontName			:String = 'Verdana';
-		/** force use deviceFont **/
-		public var useDeviceFonts						:Boolean = false;
-		
+		public static const DEFAULT_FONT_NAME	:String = 'Verdana';
+
 		/** align rule that align the text to the left but keep the hole text centered in the container **/
-		public static const LEFT_CENTERED				:String = 'left_centered';
+		public static const LEFT_CENTERED		:String = 'left_centered';
 		/** align rule that align the text to the right but keep the hole text centered in the container **/
-		public static const RIGHT_CENTERED				:String = 'right_centered';
+		public static const RIGHT_CENTERED		:String = 'right_centered';
 		
 		/** available fonts **/
-		public static var htmlBitmapFonts				:Dictionary;
+		public static var htmlBitmapFonts		:Dictionary;
 		
 		/** default blue color **/
-		public static const DEFAULT_LINK_BLUE			:uint = 0x303DF0;
+		public static const DEFAULT_LINK_BLUE	:uint = 0x303DF0;
 		/** define the default links color, null for no change (default null)**/
-		public var defaultLinkColor						:* = null;
+		public var defaultLinkColor				:* = DEFAULT_LINK_BLUE;
 		
 		/** static default method to navigate to url, you are still able to change it by field using the non static method ( function(url:String):void ) **/
-		public static var navigateToURLFunction			:Function			= HTMLTextField._navigateToURL;
+		public static var navigateToURLFunction	:Function			= HTMLTextField._navigateToURL;
 		/** the function to call to navigate to url ( function(url:String):void ) **/
-		public var navigateToURLFunction				:Function 			= HTMLTextField.navigateToURLFunction;
+		public var navigateToURLFunction		:Function 			= HTMLTextField.navigateToURLFunction;
+		/** the urlRequest used by navigate to url function **/
+		private static var _urlRequest			:URLRequest         = new URLRequest();
 		/** default navigate to urlFunction **/
 		private static function _navigateToURL( url:String ):void
 		{
-			navigateToURL( new URLRequest(url) );
+			_urlRequest.url = url;
+			navigateToURL( _urlRequest );
 		}
 		
 		/** Helper objects. */
-		protected static var sHelperMatrix:Matrix  = new Matrix();
-		protected static var sHelperRect:Rectangle = new Rectangle();
+		protected static var sHelperMatrix		:Matrix 			= new Matrix();
 		
 		/** true when a redraw is needed **/
-		protected var _mRequiresRedraw:Boolean;
+		protected var _mRequiresRedraw			:Boolean;
 		
 		//-- variables pour le texte standard --//
 		
 		/** the size of the text **/
-		protected var mSize:Number;
+		protected var mSize						:Number;
 		/** the color of the text **/
-		protected var mColor:*;
+		protected var mColor					:*;
 		/** the style of the text **/
-		protected var mStyle:uint;
+		protected var mStyle					:uint;
 		/** true for underlining the text **/
-		protected var mUnderline:Boolean;
+		protected var mUnderline				:Boolean;
 		/** the text (without html formatting) **/
-		protected var mText:String;
+		protected var mText						:String;
 		/** the font name **/
-		protected var mFontName:String;
+		protected var mFontName					:String;
 		/** the halign rule **/
-		protected var mHAlign:String;
+		protected var mHAlign					:String;
 		/** the vAlign rule **/
-		protected var mVAlign:String;
-		/** bold **/
-		protected var mBold:Boolean;
+		protected var mVAlign					:String;
+		/** bold **/		
+		protected var mBold						:Boolean;
 		/** italic **/
-		protected var mItalic:Boolean;
+		protected var mItalic					:Boolean;
 		/** if true the text will be resized to fit in the width / height area (use only font size added the the BitmapFontStyle) **/
-		protected var mAutoScale:Boolean;
-		/** use kerning **/
-		protected var mKerning:Boolean;
+		protected var mAutoScale				:Boolean;
 		/** when true, the text will automaticaly go to the next line if it not fit in the width **/
-		protected var mAutoCR:Boolean     = true;
-		/** pass it to true if you want to hide the emotes but keep their place **/
-		protected var mHideEmotes:Boolean = false;
+		protected var mAutoCR					:Boolean = true;
 		/** the minimum font size to reduce to **/
-		protected var mMinFontSize:int    = 10;
+		protected var mMinFontSize				:int = 10;
 		
 		//-- auto resize --//
 		
 		/** if true, the size will be enlarged to contain the text **/
-		protected var mResizeField:Boolean = false;
+		protected var mResizeField				:Boolean = false;
 		/** the maximum width when resizeField is set to true **/
-		protected var mMaxWidth:int        = 900;
+		protected var mMaxWidth					:int = 900;
 		/** used when mResizeField is true to keep the base size **/
-		protected var _baseWidth:int;
+		protected var _baseWidth				:int;
 		/** used when mResizeField is true to keep the base size **/
-		protected var _baseHeight:int;
+		protected var _baseHeight				:int;
 		
 		//-- Shadow --//
 		
 		/** horizontal shadow offset (0 = no shadow)**/
-		protected var mShadowX:int      = 0;
+		protected var mShadowX					:int = 0;
 		/** vertical shadow offset (0 = no shadow)**/
-		protected var mShadowY:int      = 0;
+		protected var mShadowY					:int = 0;
 		/** shadow color (default 0x222222) **/
-		protected var mShadowColor:uint = 0x0;
-		
+		protected var mShadowColor				:uint = 0x0;
+
+		//-- Contour (device only) --//
+
+		/** la taille du contour **/
+		protected var mContourSize              :uint = 0;
+		/** la puissance du contour **/
+		protected var mContourStrength          :uint = 1;
+		/** la couleur du contour **/
+		protected var mContourColor             :uint = 0x0;
+
 		//-- variables utiles pour le texte html --//
 		
 		/** true if text is HTML text **/
-		protected var mIsHTML:Boolean;
+		protected var mIsHTML					:Boolean;
 		/** the html text **/
-		protected var mTextHTML:String;
+		protected var mTextHTML					:String;
 		/** the sizes list **/
-		protected var mSizes:Array      = [];
+		protected var mSizes					:Array = [];
 		/** the styles list **/
-		protected var mStyles:Array     = [];
+		protected var mStyles					:Array = [];
 		/** the color list **/
-		protected var mColors:Array     = [];
+		protected var mColors					:Array = [];
 		/** the underlines list **/
-		protected var mUnderlines:Array = [];
+		protected var mUnderlines				:Array = [];
+		/** the links id list by char **/
+		protected var mLinksIds					:Array = [];
 		/** the links list **/
-		protected var mLinks:Array;
+		protected var mLinks					:Array;
 		/** les rectangles de touch pour les lnks **/
-		protected var mLinksRect:Vector.<Rectangle>;
+		protected var mLinksRect				:Vector.<LinkRect>;
 		/** the line spacing **/
-		protected var mLineSpacing:int  = 0;
+		protected var mLineSpacing				:int = 0;
 		
 		/** text bounds **/
-		protected var mTextBounds:Rectangle;
+		protected var mTextBounds				:Rectangle;
 		/** hit area **/
-		protected var mHitArea:Rectangle;
+		protected var mHitArea					:Rectangle;
 		
-		/** the MeshBatch **/
-		protected var mMeshBatch:MeshBatch;
-		protected var mMeshBatchS:MeshBatch;
-		
-		/** the sprite in case of using deviceFonts **/
-		protected var mSprite:Sprite;
-		
-		/** set to true for colorize emotes **/
-		public var colorizeEmotes:Boolean       = false;
-		/** set to true to ignore first and last emote on horizontal centering **/
-		public var ignoreEmotesForAlign:Boolean = false;
+		/** the image in case of using deviceFonts **/
+		protected var mImage					:Image;
 		
 		/** 
 		 * Create a new text field with the given properties. 
@@ -194,20 +183,19 @@ package starling.extensions.HTMLBitmapFonts
 				}
 			}
 			// définir la police du textField
-			this.fontName = fontName;
+			this.fontName = fontName/*.toLowerCase()*/;
 			
 			// définir les valeurs par défaut pour le textField
-			mSize        = fontSize;
-			mColor       = color;
-			mHAlign      = Align.CENTER;
-			mVAlign      = Align.CENTER;
-			mKerning     = true;
-			mBold        = bold;
-			mItalic      = italic;
-			mIsHTML      = isHtml;
-			mResizeField = resizeField;
-			_baseWidth   = width>0?width:1;
-			_baseHeight  = height>0?height:1;
+			mSize 				= fontSize;
+			mColor 				= color;
+			mHAlign 			= Align.CENTER;
+			mVAlign 			= Align.CENTER;
+			mBold 				= bold;
+			mItalic				= italic;
+			mIsHTML				= isHtml;
+			mResizeField 		= resizeField;
+			_baseWidth			= width>0?width:1;
+			_baseHeight			= height>0?height:1;
 			
 			// définir le style de base pour le textfield
 			mStyle = BitmapFontStyle.REGULAR;
@@ -269,9 +257,11 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** a static helper point used for the link touch detection **/
-		private static var _hPoint		:Point = new Point();
+		private static var _hPoint		:Point 		= new Point();
+		/** true when the mouse is over a link **/
+		private var _isOver		:Boolean 	= false;
 		/** true when the mouse is down on a link **/
-		private var _isDown:Boolean              = false;
+		private var _isDown		:Boolean 	= false;
 		/** touch process to detect links clicks **/
 		private function _onTouch(e:TouchEvent):void
 		{
@@ -279,6 +269,7 @@ package starling.extensions.HTMLBitmapFonts
 			if( !touch )
 			{
 				Mouse.cursor = MouseCursor.AUTO;
+				_isOver = false;
 				_isDown = false;
 				return;
 			}
@@ -289,6 +280,7 @@ package starling.extensions.HTMLBitmapFonts
 			if( idLink == -1 )
 			{
 				Mouse.cursor = MouseCursor.AUTO;
+				_isOver = false;
 				_isDown = false;
 				return;
 			}
@@ -296,11 +288,13 @@ package starling.extensions.HTMLBitmapFonts
 			if( touch.phase == TouchPhase.HOVER )						// mouse over
 			{
 				Mouse.cursor = MouseCursor.BUTTON;
+				_isOver = true;
 			}
 			else if( touch.phase == TouchPhase.BEGAN && !_isDown )		// mouse down
 			{
 				Mouse.cursor = MouseCursor.BUTTON;
 				_isDown = true;
+				_isOver = true;
 			}
 			else if( touch.phase == TouchPhase.ENDED && _isDown )		// mouse up -> click
 			{
@@ -316,7 +310,7 @@ package starling.extensions.HTMLBitmapFonts
 			var len:int = mLinksRect.length;
 			for( var i:int = 0; i<len; ++i )
 			{
-				if( mLinksRect[i].containsPoint(p) )	return i;
+				if( mLinksRect[i].rect.containsPoint(p) )	return mLinksRect[i].id;
 			}
 			
 			return -1;
@@ -325,67 +319,40 @@ package starling.extensions.HTMLBitmapFonts
 		/** dispose textures data. */
 		public override function dispose():void
 		{
-			// disposer le MeshBatch du texte
-			if( mMeshBatch )
+			if( mImage )
 			{
-				mMeshBatch.dispose();
-				mMeshBatch = null;
-			}
-			if( mMeshBatchS )
-			{
-				mMeshBatchS.dispose();
-				mMeshBatchS = null;
+				if( mImage.texture )   mImage.texture.dispose();
+				ImagePool.release(mImage);
+				mImage = null;
 			}
 			super.dispose();
 		}
-
+		
 		/** @inheritDoc */
-		public override function render( painter:Painter ):void
+		public override function render(painter:Painter):void
 		{
-			if( _mRequiresRedraw ) 
-			{
-				if( mustUsedeviceFonts() )	redrawContentDevice();
-				else						redrawContents();
-			}
-			
-			super.render( painter );
+			if( _mRequiresRedraw )  redrawContentDevice();
+			super.render(painter);
 		}
+		
+		/** the min height touch size for the links **/
+		private static var MIN_TOUCH_HEIGHT:int = 15;
 		
 		private var _deviceFont:HTMLDeviceFonts;
 		protected function redrawContentDevice():void
 		{
-			if( mMeshBatch )
-			{
-				mMeshBatch.removeFromParent( true );
-				mMeshBatch = null;
-			}
-			if( mMeshBatchS )
-			{
-				mMeshBatchS.removeFromParent( true );
-				mMeshBatchS = null;
-			}
-			
-			if( !mSprite )		
-			{
-				mSprite = new Sprite();
-				addChild( mSprite );
-			}
-			else
-			{
-				mSprite.removeChildren(0,-1,true);
-			}
-			
 			// sera recréé à la demande
-			mTextBounds 		= null; 	
+			mTextBounds 		= null;
 			// on vien de refaire un redraw c'est plus à faire
-			mRequiresRedraw 	= false;	
+			mRequiresRedraw 	= false;
 			
 			// si html text on applique les tableaux de taille style et couleurs
 			var sizes		:Array = mSizes && mSizes.length > 0 			? mSizes 		: [mSize];
 			var styles		:Array = mStyles && mStyles.length > 0 			? mStyles 		: [mStyle];
 			var colors		:Array = mColors && mColors.length > 0 			? mColors 		: [mColor];
 			var underlines	:Array = mUnderlines && mUnderlines.length > 0 	? mUnderlines 	: [mUnderline];
-			
+			var links       :Array = mLinks && mLinksIds && mLinks.length > 0 && mLinksIds.length > 0 ? mLinksIds.concat() : null;
+
 			// sinon on met les valeurs de base
 			if( !mIsHTML )
 			{
@@ -395,241 +362,45 @@ package starling.extensions.HTMLBitmapFonts
 			}
 			
 			if( !_deviceFont )	_deviceFont = new HTMLDeviceFonts();
-			_deviceFont.name = $useDeviceFontsForFontName.indexOf(fontName) != -1 ? mFontName : $useDeviceFontName;
-			
-			var keepData:Object = mLinks && mLinks.length > 0 ? {} : null;
-			
-			_deviceFont.lineSpacing = lineSpacing;
-			var s:Sprite = _deviceFont.getSprite( mHitArea.width, mHitArea.height, mText, sizes, styles, colors, underlines, mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, keepData, mAutoCR, mMaxWidth, mHideEmotes, mMinFontSize, false, colorizeEmotes, ignoreEmotesForAlign );
-			if( mShadowX != 0 || mShadowY != 0 )
-			{
-				var ss:Sprite = _deviceFont.getSprite( mHitArea.width, mHitArea.height, mText, sizes, styles, [mShadowColor], [false], mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, false, mAutoCR, mMaxWidth, mHideEmotes, mMinFontSize, true, false, ignoreEmotesForAlign );
-				ss.x = mShadowX;
-				ss.y = mShadowY;
-				mSprite.addChild( ss );
-			}
-			
-			mSprite.addChild(s);
-			
-			if( mResizeField )
-			{
-				mHitArea.width  = _baseWidth >= mMeshBatch.width ? _baseWidth : mMeshBatch.width;
-				mHitArea.height = _baseHeight >= mMeshBatch.height ? _baseHeight : mMeshBatch.height;
-			}
-			
-			// apply vAlign
-			mSprite.getBounds(mSprite, sHelperRect);
-			var yOffset:int = 0;
-			
-			if( mLinks && mLinks.length > 0 && keepData && keepData.loc && keepData.loc.length > 0 )
-			{
-				var charLoc:Vector.<DeviceFontCharLocation> = keepData.loc;
-				var charLen:int = charLoc.length-1;
-				if( charLen < 0 )	charLen = 0;
-				var len:int = mLinks.length;
-				mLinksRect = new Vector.<Rectangle>(len);
-				for( var i:int = 0; i<len; ++i )
-				{
-					if( mLinks[i][0] >= charLen	) mLinks[i][0] = charLen;
-					if( mLinks[i][1] >= charLen	) mLinks[i][1] = charLen;
-					if( mLinks[i][2] >= charLen	) mLinks[i][2] = charLen;
-					if( mLinks[i][3] >= charLen	) mLinks[i][3] = charLen;
-					
-					// verifier qu'on soit pas sur plusieurs lignes
-					if( charLoc[mLinks[i][3]].y > charLoc[mLinks[i][2]].y + charLoc[mLinks[i][2]].height )
-					{
-						var end:Array 		= getNextBRDevice( mLinks[i][2], charLoc );
-						var newEnd:int 		= end[0];
-						var newStart:int 	= end[1];
-						
-						var hh:int = charLoc[newEnd].char.height;
-						
-						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
-							charLoc[mLinks[i][2]].y - hh + yOffset,
-							(charLoc[newEnd].x + charLoc[newEnd].width) - charLoc[mLinks[i][2]].x,
-							(charLoc[newEnd].y + charLoc[newEnd].height) - charLoc[mLinks[i][2]].y + hh + yOffset );
-						
-						if( newStart < charLoc.length )
-						{
-							// on met la suite du lien à la suite pour qu'il soit traité apres
-							var newLink:Array = [ mLinks[i][0], mLinks[i][1], newStart, mLinks[i][3] ];
-							mLinks.push(newLink);
-							mLinksRect.length += 1;
-							++len;
-						}
-					}
-					else
-					{
-						hh = charLoc[mLinks[i][3]].height;
-						
-						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
-							charLoc[mLinks[i][2]].y - hh + yOffset,
-							(charLoc[mLinks[i][3]].x + charLoc[mLinks[i][3]].width) - charLoc[mLinks[i][2]].x,
-							(charLoc[mLinks[i][3]].y + charLoc[mLinks[i][3]].height) - charLoc[mLinks[i][2]].y + hh + yOffset );
-					}
-				}
-				
-				mLinksRect.fixed 	= true;
-				mLinks.fixed 		= true;
-				
-				if( charLoc )	DeviceFontCharLocation.returnVector(charLoc);
-				keepData = null;
-				charLoc = null;
-				
-				// lancer le touch
-				if( stage )
-				{
-					_touchable = true;
-					addEventListener( TouchEvent.TOUCH, _onTouch );
-				}
-			}
-			else if( touchable )	
-			{
-				_touchable = false;
-				removeEventListener( TouchEvent.TOUCH, _onTouch );
-			}
-		}
-		
-		/** redraw the content of the text field **/
-		protected function redrawContents():void
-		{
-			if( mSprite )	
-			{
-				mSprite.removeFromParent(true);
-				mSprite = null;
-			}
-			
-			// sera recréé à la demande
-			mTextBounds 		= null; 	
-			// on vien de refaire un redraw c'est plus à faire
-			mRequiresRedraw 	= false;	
-			
-			// créer ou reset le quad batch
-			if( mMeshBatch == null )
-			{
-				mMeshBatch           = new MeshBatch();
-				mMeshBatch.touchable = false;
-				//mMeshBatch.batchable = true;
-				addChild( mMeshBatch );
-			}
-			else
-				mMeshBatch.clear();
-			
-			// Récupérer le HTMLBitmapFont
-			var bitmapFont:HTMLBitmapFonts = htmlBitmapFonts[mFontName];
-			if (bitmapFont == null) 
-			{
-				return;
-				//throw new Error("Bitmap font not registered: " + mFontName);
-			}
-			
-			// si html text on applique les tableaux de taille style et couleurs
-			var sizes		:Array = mSizes && mSizes.length > 0 			? mSizes 		: [mSize];
-			var styles		:Array = mStyles && mStyles.length > 0 			? mStyles 		: [mStyle];
-			var colors		:Array = mColors && mColors.length > 0 			? mColors 		: [mColor];
-			var underlines	:Array = mUnderlines && mUnderlines.length > 0 	? mUnderlines 	: [mUnderline];
-			
-			// sinon on met les valeurs de base
-			if( !mIsHTML )
-			{
-				sizes 	= [mSize];
-				styles 	= [mStyle];
-				colors 	= [mColor];
-			}
-			
-			var keepData:Object = mLinks && mLinks.length > 0 ? {} : null;
-			// on fait draw le texte en fonction des parametres
-			bitmapFont.lineSpacing = mLineSpacing;
-			bitmapFont.fillMeshBatch( mMeshBatch, mHitArea.width, mHitArea.height, mText, sizes, styles, colors, underlines, mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, keepData, mAutoCR, mMaxWidth, mHideEmotes, mMinFontSize, false, colorizeEmotes, ignoreEmotesForAlign );
-			
-			if( mShadowX != 0 || mShadowY != 0 )
-			{
-				if( mMeshBatchS == null )
-				{
-					mMeshBatchS           = new MeshBatch();
-					mMeshBatchS.touchable = false;
-					//mMeshBatchS.batchable = true;
-					addChildAt( mMeshBatchS, 0 );
-				}
-				else
-					mMeshBatchS.clear();
-				
-				bitmapFont.fillMeshBatch( mMeshBatchS, mHitArea.width, mHitArea.height, mText, sizes, styles, [mShadowColor], [false], mHAlign, mVAlign, mAutoScale, mKerning, mResizeField, false, mAutoCR, mMaxWidth, mHideEmotes, mMinFontSize, true, false, ignoreEmotesForAlign );
-				mMeshBatchS.x = mShadowX;
-				mMeshBatchS.y = mShadowY;
-			}
-			else if( mMeshBatchS )
-			{
-				mMeshBatchS.removeFromParent( true );
-				mMeshBatchS = null;
-			}
-			
-			
-			if( mResizeField )
-			{
-				mHitArea.width  = _baseWidth >= mMeshBatch.width ? _baseWidth : mMeshBatch.width;
-				mHitArea.height = _baseHeight >= mMeshBatch.height ? _baseHeight : mMeshBatch.height;
-			}
-			
-			// apply vAlign
-			mMeshBatch.getBounds( mMeshBatch, sHelperRect );
-			var yOffset:int = 0;
 
-			if( mLinks && mLinks.length > 0 && keepData && keepData.loc && keepData.loc.length > 0 )
+			_deviceFont.name        = mFontName;
+			_deviceFont.lineSpacing = lineSpacing;
+
+			mImage = _deviceFont.getImage( this, mHitArea.width, mHitArea.height, mText, mImage, sizes, styles, colors, underlines, links, mHAlign, mVAlign, mAutoScale, mResizeField, mAutoCR, mMaxWidth, mMinFontSize, mContourColor, mContourSize, mContourStrength,mShadowX, mShadowY, mShadowColor );
+			addChild( mImage );
+
+			if( mResizeField )
 			{
-				var charLoc:Vector.<CharLocation> = keepData.loc;
-				var charLen:int = charLoc.length-1;
-				if( charLen < 0 )	charLen = 0;
-				var len:int = mLinks.length;
-				mLinksRect = new Vector.<Rectangle>(len);
+				mHitArea.width 	= _baseWidth >= mImage.width ? _baseWidth : mImage.width;
+				mHitArea.height = _baseHeight >= mImage.height ? _baseHeight : mImage.height;
+			}
+
+			// on gere les touch rect des liens
+			if( links && links.length > 0 )
+			{
+				// on récupere le scaling et les offsets
+				var scaling :Number = links.pop();
+				var yoff    :Number = links.pop();
+				var xoff    :Number = links.pop();
+
+				// on prend des variables temps pour calculer le y et le height en fonction du MIN_TOUCH_HEIGHT
+				var yy:Number;
+				var hh:Number;
+
+				var len     :int = links.length;
+				mLinksRect = new Vector.<LinkRect>(len);
 				for( var i:int = 0; i<len; ++i )
 				{
-					if( mLinks[i][0] >= charLen	) mLinks[i][0] = charLen;
-					if( mLinks[i][1] >= charLen	) mLinks[i][1] = charLen;
-					if( mLinks[i][2] >= charLen	) mLinks[i][2] = charLen;
-					if( mLinks[i][3] >= charLen	) mLinks[i][3] = charLen;
-					
-					// verifier qu'on soit pas sur plusieurs lignes
-					if( charLoc[mLinks[i][3]].y > charLoc[mLinks[i][2]].y + charLoc[mLinks[i][2]].char.height )
+					yy = (links[i][2]+yoff)*scaling;
+					hh = links[i][4]*scaling;
+					if( hh < MIN_TOUCH_HEIGHT )
 					{
-						var end:Array 		= getNextBR( mLinks[i][2], charLoc );
-						var newEnd:int 		= end[0];
-						var newStart:int 	= end[1];
-						
-						var hh:int = charLoc[newEnd].char.height;
-						
-						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
-							charLoc[mLinks[i][2]].y - hh + yOffset,
-							(charLoc[newEnd].x + charLoc[newEnd].char.width) - charLoc[mLinks[i][2]].x,
-							(charLoc[newEnd].y + charLoc[newEnd].char.height) - charLoc[mLinks[i][2]].y + hh + yOffset );
-						
-						if( newStart < charLoc.length )
-						{
-							// on met la suite du lien à la suite pour qu'il soit traité apres
-							var newLink:Array = [ mLinks[i][0], mLinks[i][1], newStart, mLinks[i][3] ];
-							mLinks.push(newLink);
-							mLinksRect.length += 1;
-							++len;
-						}
+						yy -= (MIN_TOUCH_HEIGHT-hh)>>1;
+						hh = MIN_TOUCH_HEIGHT;
 					}
-					else
-					{
-						hh = charLoc[mLinks[i][3]].char.height;
-						
-						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
-														charLoc[mLinks[i][2]].y - hh + yOffset,
-														(charLoc[mLinks[i][3]].x + charLoc[mLinks[i][3]].char.width) - charLoc[mLinks[i][2]].x,
-														(charLoc[mLinks[i][3]].y + charLoc[mLinks[i][3]].char.height) - charLoc[mLinks[i][2]].y + hh + yOffset );
-					}
+					mLinksRect[i] = new LinkRect( links[i][0], (links[i][1]+xoff)*scaling, yy, links[i][3]*scaling, hh );
 				}
-				
-				mLinksRect.fixed 	= true;
-				mLinks.fixed 		= true;
-				
-				if( charLoc )	CharLocation.returnVector(charLoc);
-				keepData = null;
-				charLoc = null;
-				
+
 				// lancer le touch
 				if( stage )
 				{
@@ -637,63 +408,20 @@ package starling.extensions.HTMLBitmapFonts
 					addEventListener( TouchEvent.TOUCH, _onTouch );
 				}
 			}
-			else if( touchable )	
+			else if( touchable )
 			{
 				_touchable = false;
 				removeEventListener( TouchEvent.TOUCH, _onTouch );
 			}
 		}
-		
-		[Inline]
-		private final function getNextBR( start:int, charLoc:Vector.<CharLocation> ):Array
-		{
-			var len				:int = charLoc.length;
-			var lastRealChar	:int = 0;
-			var spaceCode		:int = String(' ').charCodeAt(0);
-			for( var i:int = start+1; i<len; ++i )
-			{
-				if( lastRealChar > 0 && charLoc[i].y > charLoc[start].y + charLoc[start].char.height && charLoc[i].char.charID != spaceCode )		return [lastRealChar, i];
-				if( charLoc[i].char.charID != 10 && charLoc[i].char.charID != 13 && charLoc[i].char.charID != spaceCode )							lastRealChar = i;
-			}
-			return [lastRealChar, len-1];
-		}
-		
-		[Inline]
-		private final function getNextBRDevice( start:int, charLoc:Vector.<DeviceFontCharLocation> ):Array
-		{
-			var len				:int = charLoc.length;
-			var lastRealChar	:int = 0;
-			var spaceCode		:int = String(' ').charCodeAt(0);
-			for( var i:int = start+1; i<len; ++i )
-			{
-				if( lastRealChar > 0 && charLoc[i].y > charLoc[start].y + charLoc[start].char.height && charLoc[i].char.charID != spaceCode )		return [lastRealChar, i];
-				if( charLoc[i].char.charID != 10 && charLoc[i].char.charID != 13 && charLoc[i].char.charID != spaceCode )							lastRealChar = i;
-			}
-			return [lastRealChar, len-1];
-		}
-		
-		[Inline]
-		final protected function mustUsedeviceFonts():Boolean{
-			return useDeviceFonts || $useDeviceFonts || $useDeviceFontsForFontName.indexOf(fontName) != -1;
-		}
-		
+
 		/** get the bounds of the text. */
 		public function get textBounds():Rectangle
 		{
-			if( _mRequiresRedraw ) 		
-			{
-				if( mustUsedeviceFonts() )	redrawContentDevice();
-				else						redrawContents();
-			}
-			
-			if( mustUsedeviceFonts() )
-			{
-				if( mTextBounds == null ) 	mTextBounds = mSprite.getBounds( mSprite );
-			}
-			else
-			{
-				if( mTextBounds == null )    mTextBounds = mMeshBatch.getBounds( mMeshBatch );
-			}
+			if( _mRequiresRedraw ) 	    redrawContentDevice();
+			if( mTextBounds == null ) 	mTextBounds = new Rectangle(mImage.x, mImage.y, mImage.width, mImage.height);//mImage.getBounds(
+																													// this
+																													// );
 			
 			return mTextBounds.clone();
 		}
@@ -708,14 +436,15 @@ package starling.extensions.HTMLBitmapFonts
 		/** @inheritDoc */
 		public override function hitTest( localPoint:Point ):DisplayObject
 		{
-			if( (!visible || !touchable) )                    return null;
-			else if( mHitArea.containsPoint( localPoint ) )    return this;
+			if( !visible || !touchable ) 		            return null;
+			else if (mHitArea.containsPoint(localPoint)) 	return this;
 			else                                            return null;
 		}
 		
 		/** @inheritDoc */
 		public override function set width(value:Number):void
 		{
+			if( mHitArea.width == value )   return;
 			mHitArea.width 	= value;
 			mRequiresRedraw = true;
 		}
@@ -727,6 +456,7 @@ package starling.extensions.HTMLBitmapFonts
 		/** @inheritDoc */
 		public override function set height(value:Number):void
 		{
+			if( mHitArea.height == value )   return;
 			mHitArea.height = value;
 			mRequiresRedraw = true;
 		}
@@ -738,26 +468,14 @@ package starling.extensions.HTMLBitmapFonts
 		/** get the text width **/
 		public function get textWidth():Number
 		{
-			if( _mRequiresRedraw ) 		
-			{
-				if( mustUsedeviceFonts() )	redrawContentDevice();
-				else						redrawContents();
-			}
-			
-			if( mustUsedeviceFonts() )        return mSprite ? mSprite.width : 0;
-			else                            return mMeshBatch ? mMeshBatch.width : 0;
+			if( _mRequiresRedraw ) 		redrawContentDevice();
+			return mImage ? mImage.width : 0;
 		}
 		/** get the text height **/
 		public function get textHeight():Number
 		{
-			if( _mRequiresRedraw ) 		
-			{
-				if( mustUsedeviceFonts() )	redrawContentDevice();
-				else						redrawContents();
-			}
-			
-			if( mustUsedeviceFonts() )        return mSprite ? mSprite.height : 0;
-			else                            return mMeshBatch ? mMeshBatch.height : 0;
+			if( _mRequiresRedraw ) 		redrawContentDevice();
+			return mImage ? mImage.height : 0;
 		}
 		
 		/** 
@@ -799,59 +517,41 @@ package starling.extensions.HTMLBitmapFonts
 		protected function _parseTextHTML():void
 		{
 			mText = '';
-			if( !mTextHTML )	return;	
+			if( !mTextHTML )	        return;
 			
 			// reset arrays
-			mSizes.length 		= 0;
-			mStyles.length 		= 0;
-			mColors.length 		= 0;
-			if( mLinks )		mLinks.length = 0;
-			mUnderlines.length 	= 0;
+			mSizes.length 		        = 0;
+			mStyles.length 		        = 0;
+			mColors.length 		        = 0;
+			if( mLinks )		        mLinks.length = 0;
+			mUnderlines.length 	        = 0;
+			mLinksIds.length            = 0;
+
+			var sizeActu	:int 	    = mSize;
+			var colorActu	:* 		    = mColor; // color or gradient
+			var styleActu	:int 	    = mStyle;
+
+			var params      :Array;
+
+			var linkStart	:Array      = null;
+			var linkID      :int        = -1;
+
+			var prevSizes	:Array      = [mSize];
+			var prevColors	:Array      = [mColor];
 			
-			if( !mTextHTML )	return;
-			
-			// sauts de lignes
-			
-			mTextHTML = mTextHTML.split( '<br>' ).join( String.fromCharCode(10) );
-			mTextHTML = mTextHTML.split( '<BR>' ).join( String.fromCharCode(10) );
-			mTextHTML = mTextHTML.split( '<br/>' ).join( String.fromCharCode(10) );
-			mTextHTML = mTextHTML.split( '<BR/>' ).join( String.fromCharCode(10) );
-			mTextHTML = mTextHTML.split( '<br />' ).join( String.fromCharCode(10) );
-			mTextHTML = mTextHTML.split( '<BR />' ).join( String.fromCharCode(10) );
-			mTextHTML = mTextHTML.split( String.fromCharCode(149) ).join( String.fromCharCode(8226) );
-			
-			var lastRealChar	:int = -1;
-			var isRealChar		:Boolean = false;
-			
-			var sizeActu	:int 		= mSize;
-			var colorActu	:* 			= mColor; // color or gradient
-			var styleActu	:int 		= mStyle;
-			
-			var linkActu	:Array	= null;
-			var linkStart	:Boolean = false;
-			var linkEnd		:Boolean = false;
-			
-			var prevSizes	:Array = [mSize];
-			var prevColors	:Array = [mColor];
-			var prevStyles	:Array = [mStyle];
-			
-			var isBold		:Boolean = mBold;
-			var isItalic	:Boolean = mItalic;
-			var isUnderline	:Boolean = mUnderline;
+			var isBold		:Boolean    = mBold;
+			var isItalic	:Boolean    = mItalic;
+			var isUnderline	:Boolean    = mUnderline;
 			
 			var colorStr	:String;
 			var sizeStr		:String;
 			
 			var char		:String;
-			
-			var actualID:int;
-			var actualIDComputed:Boolean = false;
-			
+
 			var len:int = mTextHTML.length;
 			for( var i:int = 0; i<len; ++i )
 			{
 				char = mTextHTML.charAt(i);
-				actualIDComputed = false;
 				// si ouverture de balise on doit faire des truc
 				if( char == '<' )
 				{
@@ -904,14 +604,27 @@ package starling.extensions.HTMLBitmapFonts
 							prevSizes.push( sizeActu );
 							break;
 						case 'l':
-							linkActu = [ 'link', mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ) ];
-							linkStart = true;
+							linkStart = [ 'link', mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ) ];
 							if( defaultLinkColor )	colorActu = defaultLinkColor;
 							break;
 						case 'f':
-							linkActu = [ 'func', mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ) ];
-							linkStart = true;
+							linkStart = [ 'func', mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ) ];
 							if( defaultLinkColor )	colorActu = defaultLinkColor;
+							break;
+						case 'o':
+							params = mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ).split(',');
+							if( params.length == 1 )
+								shadowX = shadowY = int(params[0]);
+							else
+								shadowX = int(params[0]);
+							if( params.length > 1 ) shadowY     = int(params[1]);
+							if( params.length > 2 ) shadowColor = int(params[2]);
+							break;
+						case 'a':
+							params = mTextHTML.slice( mTextHTML.indexOf('"', i)+1, mTextHTML.indexOf('"', mTextHTML.indexOf('"', i)+1) ).split(',');
+							contourSize = int(params[0]);
+							if( params.length > 1 ) contourColor    = int(params[1]);
+							if( params.length > 2 ) contourStrength = int(params[2]);
 							break;
 						case 'u':
 							isUnderline = true;
@@ -935,7 +648,7 @@ package starling.extensions.HTMLBitmapFonts
 									break;
 								case 'l':
 								case 'f':
-									linkEnd = true;
+									linkID = -1;
 									if( defaultLinkColor )
 									{
 										if( prevColors.length > 1 )	prevColors.pop();
@@ -960,88 +673,27 @@ package starling.extensions.HTMLBitmapFonts
 				}
 				else
 				{
+					if( linkStart )
+					{
+						if( !mLinks )	mLinks = [];
+						mLinks.push( linkStart );
+
+						linkID          = mLinks.length-1;
+						linkStart       = null;
+					}
+
 					// sinon on ajoute tel quel le caractere
 					mText += char;
-					if( char.charCodeAt(0) != 10 && char.charCodeAt(0) != 13 )
-					{
-						// on ajoute la couleur actuelle
-						mColors.push( colorActu );
-						// on ajoute le soulignage
-						mUnderlines.push( isUnderline );
-					}
-					
+					// on ajoute la couleur actuelle
+					mColors.push( colorActu );
+					// on ajoute le soulignage
+					mUnderlines.push( isUnderline );
 					// on ajoute la taille actuelle
 					mSizes.push( sizeActu );
 					// on ajoute le style actuel
 					mStyles.push( styleActu );
-					
-					if( char.charCodeAt(0) != 10 && char.charCodeAt(0) != 13 && char != ' ' )
-					{
-						lastRealChar 	= mColors.length-1;
-						isRealChar 		= true;
-					}
-					else isRealChar = false;
-					
-					if( linkActu )
-					{
-						//saut de ligne en cours de lien
-						if( linkActu.length > 2 && (char.charCodeAt(0) == 10 || char.charCodeAt(0) == 13) )
-						{
-							linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(lastRealChar, mText) : lastRealChar );
-							
-							if( !mLinks )	mLinks = [];
-							mLinks.push( linkActu );
-							linkStart 	= true;
-							linkActu 	= [ linkActu[0], linkActu[1] ];
-							
-							continue;
-						}
-						
-						if( linkStart && isRealChar )	
-						{
-							if( !actualIDComputed )
-							{
-								actualID 			= htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(mColors.length-1, mText) : mColors.length-1;
-								actualIDComputed 	= true;
-							}
-							
-							linkActu.push( actualID );
-							linkStart = false;
-						}
-						if( linkEnd )
-						{
-							linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(lastRealChar, mText) : lastRealChar );
-							linkEnd = false;
-							
-							if( !mLinks )	mLinks = [];
-							mLinks.push( linkActu );
-							linkActu = null;
-						}
-					}
-				}
-			}
-			
-			if( linkActu )
-			{
-				if( linkStart )
-				{
-					if( !actualIDComputed )
-					{
-						actualID 			= htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(mColors.length-1, mText) : mColors.length-1;
-						actualIDComputed 	= true;
-					}
-					
-					linkActu.push( actualID );
-					linkStart = false;
-				}
-				if( linkEnd )	
-				{
-					linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(lastRealChar, mText) : lastRealChar );
-					linkEnd = false;
-					
-					if( !mLinks )	mLinks = [];
-					mLinks.push( linkActu );
-					linkActu = null;
+					// on ajoute le lien actuel
+					mLinksIds.push( linkID );
 				}
 			}
 		}
@@ -1052,10 +704,9 @@ package starling.extensions.HTMLBitmapFonts
 		public function get fontName():String { return mFontName; }
 		public function set fontName(value:String):void
 		{
-			if( !htmlBitmapFonts[value] && $useDeviceFontsForFontName.indexOf(value) == -1 )	throw new Error('font innexistante::'+ value)
+			value = value.toLowerCase();
 			if( mFontName != value )
 			{
-				if( $useDeviceFontsForFontName.indexOf(value) == -1 )	value = value.toLowerCase();
 				mFontName 		= value;
 				mRequiresRedraw = true;
 			}
@@ -1216,20 +867,6 @@ package starling.extensions.HTMLBitmapFonts
 		}
 		
 		/** 
-		 * use Kerning. 
-		 * @default true 
-		 **/
-		public function get kerning():Boolean { return mKerning; }
-		public function set kerning(value:Boolean):void
-		{
-			if (mKerning != value)
-			{
-				mKerning = value;
-				mRequiresRedraw = true;
-			}
-		}
-		
-		/** 
 		 * Autoscale the content to fit the container (use only available sizes)
 		 * @default false
 		 */
@@ -1247,71 +884,121 @@ package starling.extensions.HTMLBitmapFonts
 		public function get lineSpacing():int { return mLineSpacing; }
 		public function set lineSpacing( value:int ):void
 		{
-			mLineSpacing = value;
-			mRequiresRedraw = true;
+			if( mLineSpacing != value )
+			{
+				mLineSpacing    = value;
+				mRequiresRedraw = true;
+			}
 		}
 		
 		/** if true, the size will be enlarged to contain the text, the width is limited by maxWidth **/
 		public function get resizeField():Boolean { return mResizeField; }
 		public function set resizeField(value:Boolean):void
 		{
-			mResizeField = value;
-			mRequiresRedraw = true;
+			if( mResizeField != value )
+			{
+				mResizeField    = value;
+				mRequiresRedraw = true;
+			}
 		}
 		
 		/** the maximum width when resizeField is set to true **/
 		public function get maxWidth():int { return mMaxWidth; }
 		public function set maxWidth(value:int):void
 		{
-			mMaxWidth = value;
-			mRequiresRedraw = true;
+			if( mMaxWidth != value )
+			{
+				mMaxWidth       = value;
+				mRequiresRedraw = true;
+			}
 		}
 		
 		/** when true, the text will automaticaly go to the next line if it not fit in the width **/
 		public function get autoCR():Boolean { return mAutoCR; }
 		public function set autoCR(value:Boolean):void
 		{
-			mAutoCR = value;
-			mRequiresRedraw = true;
+			if( mAutoCR != value )
+			{
+				mAutoCR         = value;
+				mRequiresRedraw = true;
+			}
 		}
-		
-		/** pass it to true if you want to hide the emotes but keep their place **/
-		public function get hideEmotes():Boolean { return mHideEmotes; }
-		public function set hideEmotes(value:Boolean):void
-		{
-			mHideEmotes = value;
-			mRequiresRedraw = true;
-		}
-		
+
 		/** horizontal shadow offset (0 = no shadow)**/
 		public function get shadowX():int { return mShadowX; }
 		public function set shadowX(value:int):void
 		{
-			mShadowX = value;
-			mRequiresRedraw = true;
+			if( mShadowX != value )
+			{
+				mShadowX        = value;
+				mRequiresRedraw = true;
+			}
 		}
 		/** vertical shadow offset (0 = no shadow)**/
 		public function get shadowY():int { return mShadowY; }
 		public function set shadowY(value:int):void
 		{
-			mShadowY = value;
-			mRequiresRedraw = true;
+			if( mShadowY != value )
+			{
+				mShadowY        = value;
+				mRequiresRedraw = true;
+			}
 		}
 		
-		/** shadow color (default 0x222222) **/
+		/** shadow color (default 0x0) **/
 		public function get shadowColor():uint { return mShadowColor; }
 		public function set shadowColor(value:uint):void
 		{
-			mShadowColor = value;
-			mRequiresRedraw = true;
+			if( mShadowColor != value )
+			{
+				mShadowColor    = value;
+				mRequiresRedraw = true;
+			}
 		}
-		
+
+		/** contour color (default 0x0) **/
+		public function get contourColor():uint { return mContourColor; }
+		public function set contourColor(value:uint):void
+		{
+			if( mContourColor != value )
+			{
+				mContourColor    = value;
+				mRequiresRedraw = true;
+			}
+		}
+
+		/** contour size : 0 -> pas de contour (default 0) **/
+		public function get contourSize():uint { return mContourSize; }
+		public function set contourSize(value:uint):void
+		{
+			if( mContourSize != value )
+			{
+				mContourSize    = value;
+				mRequiresRedraw = true;
+			}
+		}
+
+		/** contour force (default 1) **/
+		public function get contourStrength():uint { return mContourStrength; }
+		public function set contourStrength(value:uint):void
+		{
+			if( mContourStrength != value )
+			{
+				mContourStrength    = value;
+				mRequiresRedraw     = true;
+			}
+		}
+
+
 		/** minimum font size to reduce to (default 10) **/
 		public function get minFontSize():int { return mMinFontSize; }
 		public function set minFontSize(value:int):void
 		{
-			mMinFontSize = value;
-			mRequiresRedraw = true;
+			if( mMinFontSize != value )
+			{
+				mMinFontSize    = value;
+				mRequiresRedraw = true;
+			}
 		}
 		
 		/** 
@@ -1319,97 +1006,41 @@ package starling.extensions.HTMLBitmapFonts
 		 */
 		public function forceRedraw():void
 		{
-			if( mustUsedeviceFonts() )	redrawContentDevice();
-			else						redrawContents();
+			redrawContentDevice();
 		}
 		
-		/** 
-		 * Register emote shortcut and the texture associated 
-		 * @param shortcut the shortcut of the emote
-		 * @param texture the texture associated with ths emote
-		 * @param xOffset a custom xOffset for the emote (default 0)
-		 * @param yOffset a custom yOffset for the emote (default 0)
-		 * @param xAdvance a custom xAdvance for the emote, if -1 advance will be texture.width (default -1)
-		 **/
-		public static function registerEmote( shortcut:String, texture:Texture, xOffset:int = 0, yOffset:int = 0, xAdvance:int = -1 ):void
-		{
-			HTMLBitmapFonts.registerEmote( shortcut, texture, xOffset, yOffset, xAdvance );
-		}
-		
-		/** 
-		 * Register a HTMLBitmapFont
-		 **/
-		public static function registerBitmapFont( texture:Texture, xml:XML, size:Number, bold:Boolean = false, italic:Boolean = false, name:String = null ):String
-		{
-			// si on a pas de tableau de fonts on le crée
-			if( !htmlBitmapFonts )	htmlBitmapFonts = new Dictionary();
-			// si le nom est null, on prend le nom dans le xml de la font
-			if( name == null ) 		name = xml.info.@face.toString();
-			// si ya pas encore d'entrée pour cette font on créé le HTMLBitmapFont
-			if( !htmlBitmapFonts[name] )	htmlBitmapFonts[name] = new HTMLBitmapFonts( name );
-			// on ajoute les infos de la font
-			HTMLBitmapFonts(htmlBitmapFonts[name]).add( texture, xml, size, bold, italic );
-			
-			return name;
-		}
-		
-		/** Unregister a BitmapFont and dispose it */
-		public static function unregisterBitmapFont(name:String, dispose:Boolean=true):void
-		{
-			// pas de tableau de bitmap font ca veut dire que aucune font n'est enregistrée -> on dégage
-			if( !htmlBitmapFonts )									return;
-			// si on doit disposer et que la font existe on appele la fonction dispose dessus
-			if( dispose && htmlBitmapFonts[name] != undefined )		htmlBitmapFonts[name].dispose();
-			// on delete l'index du dico
-			delete htmlBitmapFonts[name];
-		}
-		
-		/** return the HTMLBitmapFont with the given name <code>name</code> or null. */
-		public static function getBitmapFont(name:String):HTMLBitmapFonts
-		{
-			return htmlBitmapFonts[name];
-		}
-		
-		/** return the available sizes for the given style **/
-		public function getAvailableSizes( style:int ):Vector.<Number>
-		{
-			return HTMLBitmapFonts(htmlBitmapFonts[mFontName]).getAvailableSizesForStyle( style );
-		}
-		
-		override public function set x(value:Number):void
+		/*override public function set x(value:Number):void
 		{
 			super.x = int(value);
 		}
 		override public function set y(value:Number):void
 		{
 			super.y = int(value);
-		}
+		}*/
 		
-		public function get xx():Number{ return super.x }
-		public function set xx(value:Number):void
+		public function get xint():Number{ return super.x };
+		public function set xint(value:Number):void
 		{
-			super.x = value;
+			super.x = int(value);
 		}
+		public function get yint():Number{ return super.y };
+		public function set yint(value:Number):void
+		{
+			super.y = int(value);
+		}
+	}
+}
 
-		public function get yy():Number{ return super.y }
-		public function set yy(value:Number):void
-		{
-			super.y = value;
-		}
-		
-		//-- HELPER FUNCTIONS --//
-		
-		public function getChar( style:int, charID:int, sizeIndex:int ):BitmapChar
-		{
-			return htmlBitmapFonts[mFontName].getChar( style, charID, sizeIndex );
-		}
-		public function getBaseLine( style:int, sizeIndex:int ):Number
-		{
-			return htmlBitmapFonts[mFontName].getBaseLine( style, sizeIndex );
-		}
-		public function getLineHeight( style:int, sizeIndex:int ):Number
-		{
-			return htmlBitmapFonts[mFontName].getLineHeight( style, sizeIndex );
-		}
+import flash.geom.Rectangle;
+
+internal class LinkRect
+{
+	public var id   :int;
+	public var rect :Rectangle;
+
+	public function LinkRect(id:int, x:Number, y:Number, width:Number, height:Number)
+	{
+		this.id     = id;
+		this.rect   = new Rectangle(x,y,width,height);
 	}
 }
