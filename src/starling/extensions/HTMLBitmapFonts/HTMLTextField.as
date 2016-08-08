@@ -436,18 +436,18 @@ package starling.extensions.HTMLBitmapFonts
 					if( mLinks[i][3] >= charLen	) mLinks[i][3] = charLen;
 					
 					// verifier qu'on soit pas sur plusieurs lignes
-					if( charLoc[mLinks[i][3]].y > charLoc[mLinks[i][2]].y + charLoc[mLinks[i][2]].height )
+					if( charLoc[mLinks[i][3]].y > charLoc[mLinks[i][2]].y + charLoc[mLinks[i][2]].height*charLoc[mLinks[i][2]].scale )
 					{
 						var end:Array 		= getNextBRDevice( mLinks[i][2], charLoc );
 						var newEnd:int 		= end[0];
 						var newStart:int 	= end[1];
 						
-						var hh:int = charLoc[newEnd].char.height;
+						var hh:int = charLoc[newEnd].char.height*charLoc[newEnd].scale;
 						
 						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
 							charLoc[mLinks[i][2]].y - hh + yOffset,
-							(charLoc[newEnd].x + charLoc[newEnd].width) - charLoc[mLinks[i][2]].x,
-							(charLoc[newEnd].y + charLoc[newEnd].height) - charLoc[mLinks[i][2]].y + hh + yOffset );
+							(charLoc[newEnd].x + charLoc[newEnd].width*charLoc[newEnd].scale) - charLoc[mLinks[i][2]].x,
+							(charLoc[newEnd].y + charLoc[newEnd].height*charLoc[newEnd].scale) - charLoc[mLinks[i][2]].y + hh + yOffset );
 						
 						if( newStart < charLoc.length )
 						{
@@ -460,12 +460,12 @@ package starling.extensions.HTMLBitmapFonts
 					}
 					else
 					{
-						hh = charLoc[mLinks[i][3]].height;
+						hh = charLoc[mLinks[i][3]].height*charLoc[mLinks[i][3]].scale;
 						
 						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
 							charLoc[mLinks[i][2]].y - hh + yOffset,
-							(charLoc[mLinks[i][3]].x + charLoc[mLinks[i][3]].width) - charLoc[mLinks[i][2]].x,
-							(charLoc[mLinks[i][3]].y + charLoc[mLinks[i][3]].height) - charLoc[mLinks[i][2]].y + hh + yOffset );
+							(charLoc[mLinks[i][3]].x + charLoc[mLinks[i][3]].width*charLoc[mLinks[i][3]].scale) - charLoc[mLinks[i][2]].x,
+							(charLoc[mLinks[i][3]].y + charLoc[mLinks[i][3]].height*charLoc[mLinks[i][3]].scale) - charLoc[mLinks[i][2]].y + hh + yOffset );
 					}
 				}
 				
@@ -582,27 +582,28 @@ package starling.extensions.HTMLBitmapFonts
 				if( charLen < 0 )	charLen = 0;
 				var len:int = mLinks.length;
 				mLinksRect = new Vector.<Rectangle>(len);
+
 				for( var i:int = 0; i<len; ++i )
 				{
 					if( mLinks[i][0] >= charLen	) mLinks[i][0] = charLen;
 					if( mLinks[i][1] >= charLen	) mLinks[i][1] = charLen;
 					if( mLinks[i][2] >= charLen	) mLinks[i][2] = charLen;
 					if( mLinks[i][3] >= charLen	) mLinks[i][3] = charLen;
-					
+
 					// verifier qu'on soit pas sur plusieurs lignes
-					if( charLoc[mLinks[i][3]].y > charLoc[mLinks[i][2]].y + charLoc[mLinks[i][2]].char.height )
+					if( charLoc[mLinks[i][3]].y > charLoc[mLinks[i][2]].y + charLoc[mLinks[i][2]].char.height*charLoc[mLinks[i][2]].scale )
 					{
 						var end:Array 		= getNextBR( mLinks[i][2], charLoc );
 						var newEnd:int 		= end[0];
 						var newStart:int 	= end[1];
-						
-						var hh:int = charLoc[newEnd].char.height;
-						
+
+						var hh:int = charLoc[newEnd].char.height*charLoc[newEnd].scale;
+
 						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
-							charLoc[mLinks[i][2]].y - hh + yOffset,
-							(charLoc[newEnd].x + charLoc[newEnd].char.width) - charLoc[mLinks[i][2]].x,
-							(charLoc[newEnd].y + charLoc[newEnd].char.height) - charLoc[mLinks[i][2]].y + hh + yOffset );
-						
+								charLoc[mLinks[i][2]].y - hh + yOffset,
+								(charLoc[newEnd].x + charLoc[newEnd].char.width*charLoc[newEnd].scale) - charLoc[mLinks[i][2]].x,
+								(charLoc[newEnd].y + charLoc[newEnd].char.height*charLoc[newEnd].scale) - charLoc[mLinks[i][2]].y + hh + yOffset );
+
 						if( newStart < charLoc.length )
 						{
 							// on met la suite du lien à la suite pour qu'il soit traité apres
@@ -614,15 +615,15 @@ package starling.extensions.HTMLBitmapFonts
 					}
 					else
 					{
-						hh = charLoc[mLinks[i][3]].char.height;
-						
+						hh = charLoc[mLinks[i][3]].char.height*charLoc[mLinks[i][3]].scale;
+
 						mLinksRect[i] = new Rectangle( 	charLoc[mLinks[i][2]].x,
-														charLoc[mLinks[i][2]].y - hh + yOffset,
-														(charLoc[mLinks[i][3]].x + charLoc[mLinks[i][3]].char.width) - charLoc[mLinks[i][2]].x,
-														(charLoc[mLinks[i][3]].y + charLoc[mLinks[i][3]].char.height) - charLoc[mLinks[i][2]].y + hh + yOffset );
+								charLoc[mLinks[i][2]].y - hh + yOffset,
+								(charLoc[mLinks[i][3]].x + charLoc[mLinks[i][3]].char.width*charLoc[mLinks[i][3]].scale) - charLoc[mLinks[i][2]].x,
+								(charLoc[mLinks[i][3]].y + charLoc[mLinks[i][3]].char.height*charLoc[mLinks[i][3]].scale) - charLoc[mLinks[i][2]].y + hh + yOffset );
 					}
 				}
-				
+
 				mLinksRect.fixed 	= true;
 				mLinks.fixed 		= true;
 				
@@ -637,7 +638,7 @@ package starling.extensions.HTMLBitmapFonts
 					addEventListener( TouchEvent.TOUCH, _onTouch );
 				}
 			}
-			else if( touchable )	
+			else if( touchable )
 			{
 				_touchable = false;
 				removeEventListener( TouchEvent.TOUCH, _onTouch );
@@ -652,8 +653,8 @@ package starling.extensions.HTMLBitmapFonts
 			var spaceCode		:int = String(' ').charCodeAt(0);
 			for( var i:int = start+1; i<len; ++i )
 			{
-				if( lastRealChar > 0 && charLoc[i].y > charLoc[start].y + charLoc[start].char.height && charLoc[i].char.charID != spaceCode )		return [lastRealChar, i];
-				if( charLoc[i].char.charID != 10 && charLoc[i].char.charID != 13 && charLoc[i].char.charID != spaceCode )							lastRealChar = i;
+				if( lastRealChar > 0 && charLoc[i].y > charLoc[start].y + charLoc[start].char.height*charLoc[start].scale && charLoc[i].char.charID != spaceCode )		return [lastRealChar, i];
+				if( charLoc[i].char.charID != 10 && charLoc[i].char.charID != 13 && charLoc[i].char.charID != spaceCode )							                    lastRealChar = i;
 			}
 			return [lastRealChar, len-1];
 		}
@@ -666,8 +667,8 @@ package starling.extensions.HTMLBitmapFonts
 			var spaceCode		:int = String(' ').charCodeAt(0);
 			for( var i:int = start+1; i<len; ++i )
 			{
-				if( lastRealChar > 0 && charLoc[i].y > charLoc[start].y + charLoc[start].char.height && charLoc[i].char.charID != spaceCode )		return [lastRealChar, i];
-				if( charLoc[i].char.charID != 10 && charLoc[i].char.charID != 13 && charLoc[i].char.charID != spaceCode )							lastRealChar = i;
+				if( lastRealChar > 0 && charLoc[i].y > charLoc[start].y + charLoc[start].char.height*charLoc[start].scale && charLoc[i].char.charID != spaceCode )		return [lastRealChar, i];
+				if( charLoc[i].char.charID != 10 && charLoc[i].char.charID != 13 && charLoc[i].char.charID != spaceCode )							                    lastRealChar = i;
 			}
 			return [lastRealChar, len-1];
 		}
@@ -819,7 +820,8 @@ package starling.extensions.HTMLBitmapFonts
 			mTextHTML = mTextHTML.split( '<br />' ).join( String.fromCharCode(10) );
 			mTextHTML = mTextHTML.split( '<BR />' ).join( String.fromCharCode(10) );
 			mTextHTML = mTextHTML.split( String.fromCharCode(149) ).join( String.fromCharCode(8226) );
-			
+
+			var previousRealChar:int = -1;
 			var lastRealChar	:int = -1;
 			var isRealChar		:Boolean = false;
 			
@@ -977,6 +979,7 @@ package starling.extensions.HTMLBitmapFonts
 					
 					if( char.charCodeAt(0) != 10 && char.charCodeAt(0) != 13 && char != ' ' )
 					{
+						previousRealChar= lastRealChar;
 						lastRealChar 	= mColors.length-1;
 						isRealChar 		= true;
 					}
@@ -1010,7 +1013,7 @@ package starling.extensions.HTMLBitmapFonts
 						}
 						if( linkEnd )
 						{
-							linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(lastRealChar, mText) : lastRealChar );
+							linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(previousRealChar, mText) : previousRealChar );
 							linkEnd = false;
 							
 							if( !mLinks )	mLinks = [];
@@ -1036,7 +1039,7 @@ package starling.extensions.HTMLBitmapFonts
 				}
 				if( linkEnd )	
 				{
-					linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(lastRealChar, mText) : lastRealChar );
+					linkActu.push( htmlBitmapFonts[mFontName] ? htmlBitmapFonts[mFontName].getIndex(previousRealChar, mText) : previousRealChar );
 					linkEnd = false;
 					
 					if( !mLinks )	mLinks = [];
@@ -1052,7 +1055,7 @@ package starling.extensions.HTMLBitmapFonts
 		public function get fontName():String { return mFontName; }
 		public function set fontName(value:String):void
 		{
-			if( !htmlBitmapFonts[value] && $useDeviceFontsForFontName.indexOf(value) == -1 )	throw new Error('font innexistante::'+ value)
+			if( !htmlBitmapFonts[value] && $useDeviceFontsForFontName.indexOf(value) == -1 )	throw new Error('font innexistante::'+ value);
 			if( mFontName != value )
 			{
 				if( $useDeviceFontsForFontName.indexOf(value) == -1 )	value = value.toLowerCase();
