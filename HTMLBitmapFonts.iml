@@ -2,16 +2,34 @@
 <module type="Flex" version="4">
   <component name="FlexBuildConfigurationManager" active="HTMLBitmapFonts">
     <configurations>
-      <configuration name="HTMLBitmapFonts" pure-as="true" output-type="Library" output-file="HTMLBitmapFonts.swc" output-folder="$MODULE_DIR$/bin">
+      <configuration name="HTMLBitmapFonts" pure-as="true" output-type="Library" output-file="HTMLBitmapFonts.swc" output-folder="$MODULE_DIR$/out/production/HTMLBitmapFonts">
         <dependencies target-player="20.0">
           <entries>
-            <entry library-id="adcf5d05-75c4-40d1-8163-1a6b900afa95">
-              <dependency linkage="External" />
+            <entry library-id="d01e7240-6f54-4f6c-af14-a6677302784e">
+              <dependency linkage="Merged" />
             </entry>
           </entries>
           <sdk name="AIRSDK_20" />
         </dependencies>
-        <compiler-options />
+        <compiler-options>
+          <option name="additionalOptions" value="-define=CONFIG::DEBUG,true" />
+        </compiler-options>
+        <packaging-air-desktop />
+        <packaging-android />
+        <packaging-ios />
+      </configuration>
+      <configuration name="demo" pure-as="true" main-class="Demo" output-file="demo.swf" output-folder="$MODULE_DIR$/demo" use-html-wrapper="true" wrapper-template-path="$MODULE_DIR$/demo/html-template">
+        <dependencies target-player="20.0">
+          <entries>
+            <entry library-id="d8d2b39d-9b3c-4e34-8242-fff72acef11b">
+              <dependency linkage="Merged" />
+            </entry>
+          </entries>
+          <sdk name="AIRSDK_20" />
+        </dependencies>
+        <compiler-options>
+          <option name="additionalOptions" value="-define=CONFIG::DEBUG,true" />
+        </compiler-options>
         <packaging-air-desktop />
         <packaging-android />
         <packaging-ios />
@@ -26,11 +44,19 @@
     </content>
     <orderEntry type="jdk" jdkName="AIRSDK_20" jdkType="Flex SDK Type (new)" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="starling_v2" level="project" />
-    <orderEntry type="library" exported="" name="HTMLBitmapFonts" level="project" />
     <orderEntry type="module-library" exported="">
       <library type="flex">
-        <properties id="adcf5d05-75c4-40d1-8163-1a6b900afa95" />
+        <properties id="d01e7240-6f54-4f6c-af14-a6677302784e" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/starling_v2.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="d8d2b39d-9b3c-4e34-8242-fff72acef11b" />
         <CLASSES>
           <root url="jar://$MODULE_DIR$/libs/starling_v2.swc!/" />
         </CLASSES>

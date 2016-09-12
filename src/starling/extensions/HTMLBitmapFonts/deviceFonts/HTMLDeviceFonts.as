@@ -110,7 +110,7 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 		/** font name **/
 		protected var mName:String;
 		/** font name **/
-		public function set name(value:String):void         { mName = value; };
+		public function set name(value:String):void         { mName = value; }
 
 		/** le lineSpacing **/
 		protected var _lineSpacing:int = 0;
@@ -145,18 +145,21 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 
 		private var mMatrix:Matrix = new Matrix();
 
-		/** 
+		/**
 		 * Fill the QuadBatch with text, no reset will be call on the QuadBatch
-		 * @param quadBatch the QuadBatch to fill
+		 * @param parent the HTMLTextField container
 		 * @param width container width
 		 * @param height container height
 		 * @param text the text String
+		 * @param retour
 		 * @param fontSizes (default null->base size) the array containing the size by char. (if shorter than the text,
 		 *     the last value is used for the rest)
 		 * @param styles (default null->base style) the array containing the style by char. (if shorter than the text,
 		 *     the last value is used for the rest)
 		 * @param colors (default null->0xFFFFFF) the array containing the colors by char, no tint -> 0xFFFFFF (if
 		 *     shorter than the text, the last value is used for the rest)
+		 * @param underlines
+		 * @param links
 		 * @param hAlign (default center) horizontal align rule
 		 * @param vAlign (default center) vertical align rule
 		 * @param autoScale (default true) if true the text will be reduced for fiting the container size (if smaller
@@ -165,8 +168,13 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 		 *     fit.
 		 * @param autoCR (default true) do auto line break or not.
 		 * @param maxWidth the max width if resizeQuad is true.
-		 * @param hideEmote, if true the emote wont be displayed.
-		 * @param minFontSize the minimum font size to reduce to. 
+		 * @param minFontSize the minimum font size to reduce to.
+		 * @param contourColor
+		 * @param contourSize
+		 * @param contourStrength
+		 * @param shadowX
+		 * @param shadowY
+		 * @param shadowColor
 		 **/
 		public function getImage(    parent:HTMLTextField, width:Number, height:Number, text:String, retour:Image,
 									  fontSizes:Array = null, styles:Array = null, colors:Array = null, underlines:Array = null, links:Array = null,
@@ -1003,7 +1011,7 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 
 			var metrics:TextLineMetrics = _txt.getLineMetrics(0);
 			var bounds0:Rectangle = _txt.getCharBoundaries(0);
-			var bounds1:Rectangle = _txt.getCharBoundaries(len-1)
+			var bounds1:Rectangle = _txt.getCharBoundaries(len-1);
 			var union:Rectangle = bounds0.union(bounds1);
 
 			loc.charID      = nextChar;
@@ -1028,7 +1036,7 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			return loc;
 		}
 
-		private function renderEmote( id:int, color:* = 0xFFFFFF, underline:Boolean = false ):DeviceFontCharLocation
+		private static function renderEmote( id:int, color:* = 0xFFFFFF, underline:Boolean = false ):DeviceFontCharLocation
 		{
 			var loc :DeviceFontCharLocation = DeviceFontCharLocation.instanceFromPool( _emotesLinkages[id] );
 
@@ -1058,13 +1066,13 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 		private static var _gradBoxMGraphics:Graphics;
 
 		[Inline]
-		public static function addCharTexture( bitmapData:BitmapData, char:DeviceFontCharLocation, color:*, offsetX:int, offsetY:int ):void
+		public static function addCharTexture( bitmapData:BitmapData, charLoc:DeviceFontCharLocation, color:*, offsetX:int, offsetY:int ):void
 		{
-			_txtFormat.size 		= char.size;
+			_txtFormat.size 		= charLoc.size;
 			_txtFormat.color 		= 0xFFFFFF;
-			_txtFormat.bold			= char.isBold;
-			_txtFormat.italic		= char.isItalic;
-			_txtFormat.font 		= char.name;
+			_txtFormat.bold			= charLoc.isBold;
+			_txtFormat.italic		= charLoc.isItalic;
+			_txtFormat.font 		= charLoc.name;
 			// si on a un dégradé on va forcer la couleur du texte en noir pour pouvoir appliquer le texte en masque
 			_txtFormat.color        = color is int ? color : 0x0;
 
@@ -1072,17 +1080,17 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			_txt.defaultTextFormat 	= _txtFormat;
 
 			var str :String = '';
-			if( char.charIDs )
+			if( charLoc.charIDs )
 			{
-				var len:int = char.charIDs.length;
+				var len:int = charLoc.charIDs.length;
 				for( var i:int = 0; i < len; ++i )
 				{
-					str += String.fromCharCode( char.charIDs[i] );
+					str += String.fromCharCode( charLoc.charIDs[i] );
 				}
 			}
 			else
 			{
-				str = String.fromCharCode( char.charID );
+				str = String.fromCharCode( charLoc.charID );
 			}
 			_txt.text 				= str;
 
@@ -1098,9 +1106,9 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			if( !_canEmbed || _txt.textWidth == 0.0 || _txt.textHeight == 0.0 )
 			{
 				// on peut pas embed on va généré la font en x2 pour réduire afin de faire un fake antialias
-				aa_enlarge              = char.size > 12 ? AA_ENLARGE : 1;
+				aa_enlarge              = charLoc.size > 12 ? AA_ENLARGE : 1;
 
-				_txtFormat.size         = char.size * aa_enlarge;
+				_txtFormat.size         = charLoc.size * aa_enlarge;
 				_txt.defaultTextFormat 	= _txtFormat;
 				_txt.text 				= str;
 				_txt.embedFonts         = false;
@@ -1110,7 +1118,7 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			bdtmp.drawWithQuality(_txt, null, null, null, null, true, StageQuality.BEST);*/
 
 			var mat:Matrix = new Matrix(1/aa_enlarge,0,0,1/aa_enlarge);
-			mat.translate( char.x-offsetX, char.y-offsetY );
+			mat.translate( charLoc.x-offsetX, charLoc.y-offsetY );
 
 			if( color is int )
 			{
@@ -1119,10 +1127,10 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			}
 			else
 			{
-				var bdtmp:BitmapData = new BitmapData(char.width*2*aa_enlarge, char.height*2*aa_enlarge, true, 0xFFFFFF);
+				var bdtmp:BitmapData = new BitmapData(charLoc.width*2*aa_enlarge, charLoc.height*2*aa_enlarge, true, 0xFFFFFF);
 				bdtmp.drawWithQuality(_txt, null, null, null, null, true, StageQuality.BEST);
 
-				GRAD_MAT.createGradientBox(char.width*aa_enlarge, char.height*aa_enlarge, Math.PI/2, 0, 0);
+				GRAD_MAT.createGradientBox(charLoc.width*aa_enlarge, charLoc.height*aa_enlarge, Math.PI/2, 0, 0);
 
 				var btemp:Bitmap = new Bitmap(bdtmp,PixelSnapping.ALWAYS,true);
 				btemp.cacheAsBitmap = true;
@@ -1145,29 +1153,29 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 			//bdtmp.dispose();
 		}
 
-		private function addUnderlineTexture( bitmapData:BitmapData, char:DeviceFontCharLocation, color:*, offsetX:int, offsetY:int ):void
+		private static function addUnderlineTexture( bitmapData:BitmapData, charLoc:DeviceFontCharLocation, color:*, offsetX:int, offsetY:int ):void
 		{
 			if( color is Array )    color = color[2];
 
-			var ww:int = char.xAdvance + 2;
-			var hh:int = int(char.lineHeight/18);
+			var ww:int = charLoc.xAdvance + 2;
+			var hh:int = int(charLoc.lineHeight/18);
 			if( hh < 1 )    hh = 1;
 
-			var xx:int = char.x - offsetX + 2;
-			var yy:int = Math.ceil(char.y - offsetY + char.baseLine + hh+ (2*globalScale) );
+			var xx:int = charLoc.x - offsetX + 2;
+			var yy:int = Math.ceil(charLoc.y - offsetY + charLoc.baseLine + hh+ (2*globalScale) );
 
 			_gradBoxGraphics.clear();
-			_gradBoxGraphics.beginFill(color)
+			_gradBoxGraphics.beginFill(color);
 			_gradBoxGraphics.drawRect(xx, yy, ww, hh);
 			_gradBoxGraphics.endFill();
 
 			bitmapData.drawWithQuality(_gradBox, null, null, null, null, false, StageQuality.BEST);
 		}
 
-		private function addEmoteTexture( bitmapData:BitmapData, char:DeviceFontCharLocation, color:*, offsetX:int, offsetY:int ):void
+		private static function addEmoteTexture( bitmapData:BitmapData, charLoc:DeviceFontCharLocation, color:*, offsetX:int, offsetY:int ):void
 		{
 			var mat:Matrix = new Matrix();
-			mat.translate( char.x-offsetX, char.y-offsetY );
+			mat.translate( charLoc.x-offsetX, charLoc.y-offsetY );
 
 			if( color is int )
 			{
@@ -1176,23 +1184,23 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 				t.greenMultiplier = Colors.extractGreen(color) / 255;
 				t.redMultiplier = Colors.extractRed(color) / 255;
 
-				bitmapData.drawWithQuality(char.link, mat, t, null, null, false, StageQuality.BEST);
+				bitmapData.drawWithQuality(charLoc.link, mat, t, null, null, false, StageQuality.BEST);
 			}
 			else
 			{
-				GRAD_MAT.createGradientBox(char.width, char.height, Math.PI/2, 0, 0);
+				GRAD_MAT.createGradientBox(charLoc.width, charLoc.height, Math.PI/2, 0, 0);
 
-				char.link.cacheAsBitmap = true;
+				charLoc.link.cacheAsBitmap = true;
 
 				_gradBoxGraphics.clear();
 				_gradBoxGraphics.beginGradientFill(GradientType.LINEAR, [color[0], color[2]], ALPHAS, RATIOS, GRAD_MAT);
-				_gradBoxGraphics.drawRect(0, 0, char.width*2, char.height*2);
+				_gradBoxGraphics.drawRect(0, 0, charLoc.width*2, charLoc.height*2);
 				_gradBoxGraphics.endFill();
-				_gradBox.mask = char.link;
+				_gradBox.mask = charLoc.link;
 
 				bitmapData.drawWithQuality(_gradBox, mat, null, null, null, false, StageQuality.BEST);
 
-				char.link.cacheAsBitmap = false;
+				charLoc.link.cacheAsBitmap = false;
 				_gradBox.mask = null;
 			}
 		}
@@ -1227,6 +1235,7 @@ package starling.extensions.HTMLBitmapFonts.deviceFonts
 		[Inline]
 		protected final function _reduceSizes( sizes:Array, minFontSize:int, text:String ):Boolean
 		{
+			CONFIG::DEBUG{ trace('HTMLDeviceFont::reduceSize', text, sizes); }
 			// récupérer la taille du tableau de tailles
 			var len			:int = sizes.length;
 			var limite		:int = 0;
